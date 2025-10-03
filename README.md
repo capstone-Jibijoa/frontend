@@ -1,2 +1,2 @@
 # frontend
-React 기반 프론트엔
+React 기반 프론트엔드
