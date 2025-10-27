@@ -7,10 +7,14 @@ import Footer from '../components/Footer';
 // 페이지 전체를 감싸는 컨테이너. 이제 이 자체가 배경이 됩니다.
 const PageWrapper = styled.div`
     width: 100%;
+    max-width: 1440px;
+    padding-left: 80px;
+    padding-right: 80px;
+    box-sizing: border-box;
+
     min-height: 1540px; /* 최소 높이를 1540px로 설정 */
     margin: 0 auto; /* 화면 중앙에 위치시킴 */
     
-    /* 피그마의 Stops 정보를 그대로 코드로 옮겼습니다! */
     background: linear-gradient(
         170deg, 
         #c157eb 0%,
@@ -31,6 +35,9 @@ const PageWrapper = styled.div`
     flex-direction: column;
     align-items: center;
     padding-top: 150px;
+    
+
+    
 `;
 
 // 헤드라인 스타일 (이전과 동일)

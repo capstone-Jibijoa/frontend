@@ -7,7 +7,7 @@ const DashboardContainer = styled.section`
   width: 100%;
   max-width: 1010px;
   margin-top: 80px; /* 간격 살짝 조정 */
-  padding: 0 20px;
+  margin-bottom: 100px;
 `;
 
 // 2. img 태그에 직접 스타일을 적용합니다.

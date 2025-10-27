@@ -4,9 +4,11 @@ import styled from 'styled-components';
 // FooterContainer의 스타일은 그대로 유지합니다.
 const FooterContainer = styled.footer`
     width: 100%; /* 너비는 100%로 유지 */
-    max-width: 1440px;
-    padding: 40px 80px;
-    margin-top: auto; /* ★ 이게 바로 마법의 코드입니다! */
+    
+    padding-top: 40px;
+    padding-top: 40px;
+    
+    margin-top: auto; 
     z-index: 10;
     display: center;
     justify-content: center;
