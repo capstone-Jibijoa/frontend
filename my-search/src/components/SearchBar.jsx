@@ -6,14 +6,13 @@ import styled from 'styled-components';
 const SearchContainer = styled.div`
     position: relative;
     width: 50%; /* 사용자님이 설정하신 50% */
-    max-width: 720px;
-    margin-top: 40px;
+    margin-top: 20px;
 `;
 
 const SearchInput = styled.input`
     width: 100%;
     height: 56px;
-    padding: 0 40px;
+    padding: 0 10px;
     border-radius: 28px;
     border: 1px solid #D466C9;
     font-size: 16px;
@@ -35,8 +34,6 @@ const SearchIcon = styled.div`
     height: 24px;
 `;
 
-// --- 🎨 여기서부터 로직이 업그레이드됩니다! 🎨 ---
-
 // 'defaultQuery'라는 props를 받도록 설정합니다.
 const SearchBar = ({ defaultQuery = '' }) => {
   // 1. 검색어를 저장할 state를 만듭니다. 초기값은 props로 받은 defaultQuery입니다.
@@ -55,7 +52,8 @@ const SearchBar = ({ defaultQuery = '' }) => {
 
   // 4. 검색 실행: Enter 또는 클릭 시
     const handleSearch = () => {
-        if (query.trim() !== '') {
+        // if (query.trim() !== '')
+        if (true) {
         // '/search' 페이지로 이동하되, URL에 ?q=검색어 를 붙여서 보냅니다.
         navigate(`/search?q=${query}`);
         }

@@ -35,9 +35,6 @@ const PageWrapper = styled.div`
     flex-direction: column;
     align-items: center;
     padding-top: 150px;
-    
-
-    
 `;
 
 // 헤드라인 스타일 (이전과 동일)
