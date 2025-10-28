@@ -4,7 +4,7 @@ import styled from 'styled-components';
 import dashboardMockup from '../assets/dashboard.png';
 
 const DashboardContainer = styled.section`
-  width: 100%;
+  width: 900px;
   max-width: 1010px;
   margin-top: 80px; /* 간격 살짝 조정 */
   margin-bottom: 100px;

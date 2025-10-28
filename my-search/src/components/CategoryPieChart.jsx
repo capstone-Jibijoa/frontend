@@ -4,22 +4,22 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recha
 
 // 차트 하나하나를 감싸는 박스 (ResultsPage에서 가져옴)
 const ChartBox = styled.div`
-  flex: 1;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 16px;
-  background-color: #ffffff;
-  min-width: 200px; /* 차트가 너무 찌그러지지 않게 최소 너비 설정 */
+    flex: 1;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 16px;
+    background-color: #ffffff;
+    min-width: 200px; /* 차트가 너무 찌그러지지 않게 최소 너비 설정 */
 `;
 
 // 차트 제목 (ResultsPage에서 가져옴)
 const ChartTitle = styled.h3`
-  font-size: 18px;
-  font-weight: 600;
-  color: #374151;
-  margin-top: 0;
-  margin-bottom: 16px;
-  text-align: center;
+    font-size: 18px;
+    font-weight: 600;
+    color: #374151;
+    margin-top: 0;
+    margin-bottom: 16px;
+    text-align: center;
 `;
 
 // 피그마 디자인과 유사한 색상 팔레트
