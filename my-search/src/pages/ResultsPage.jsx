@@ -2,6 +2,7 @@ import React from 'react';
 import styled from 'styled-components';
 import { useSearchParams } from 'react-router-dom';
 import SearchBar from '../components/SearchBar'; // 메인페이지 검색창 재사용
+import CategoryPieChart from '../components/CategoryPieChart'; // 차트 컴포넌트 재사용
 
 // 페이지 전체를 감싸는 컨테이너
 const ResultsPageContainer = styled.div`
@@ -49,81 +50,63 @@ const ChartRow = styled.div`
     gap: 24px; /* 차트 사이의 간격 */
 `;
 
-// 차트 하나하나를 감싸는 박스
-const ChartBox = styled.div`
-    flex: 1; /* 행 안의 공간을 차트들이 똑같이 나눠 가짐 */
-    border: 1px solid #e5e7eb; /* 차트 박스의 연한 테두리 */
-    border-radius: 8px;
-    padding: 16px;
-    background-color: #ffffff;
-`;
+const fruitData = [
+    { name: 'egg fruit', value: 15 },
+    { name: 'apple', value: 23 },
+    { name: 'banana', value: 19 },
+    { name: 'carrot', value: 15 },
+    { name: 'dewberry', value: 27 },
+];
 
-// 차트 제목 (Fruit, meat 등)
-const ChartTitle = styled.h3`
-    font-size: 18px;
-    font-weight: 600;
-    color: #374151;
-    margin-top: 0;
-    margin-bottom: 16px;
-    text-align: center;
-`;
+const meatData = [
+    { name: 'duck', value: 15 },
+    { name: 'pork', value: 23 },
+    { name: 'beef', value: 19 },
+    { name: 'chicken', value: 15 },
+    { name: 'lamb', value: 27 },
+];
 
-// 실제 차트가 그려질 영역을 표시하는 회색 상자
-const ChartPlaceholder = styled.div`
-    width: 100%;
-    height: 250px; /* 차트 높이 임시 지정 */
-    background-color: #f3f4f6; /* 연한 회색 배경 */
-    border-radius: 4px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    color: #9ca3af;
-`;
+const jobData = [
+    { name: 'A', value: 15 },
+    { name: 'B', value: 23 },
+    { name: 'C', value: 19 },
+    { name: 'D', value: 15 },
+    { name: 'E', value: 27 },
+];
+
+const ageData = jobData;
+const marriageData = jobData;
+
 const ResultsPage = () => {
     const [searchParams] = useSearchParams();
     const query = searchParams.get('q');
     
+    
     return (
         <ResultsPageContainer>
-        <SearchBar defaultQuery={query} />
+            <SearchBar defaultQuery={query} />
 
-        <SummaryCard>
-            <SectionTitle>AI 요약 정리</SectionTitle>
-            
-            {/* --- ✍️ 여기에 새로운 JSX 구조가 들어갑니다! ✍️ --- */}
-            <ChartGridContainer>
-            {/* 첫 번째 행: 차트 2개 */}
-            <ChartRow>
-                <ChartBox>
-                <ChartTitle>Fruit</ChartTitle>
-                <ChartPlaceholder>차트</ChartPlaceholder>
-                </ChartBox>
-                <ChartBox>
-                <ChartTitle>meat</ChartTitle>
-                <ChartPlaceholder>차트</ChartPlaceholder>
-                </ChartBox>
-            </ChartRow>
+            <SummaryCard>
+                <SectionTitle>AI 요약 정리</SectionTitle>
 
-            {/* 두 번째 행: 차트 3개 */}
-            <ChartRow>
-                <ChartBox>
-                <ChartTitle>직업</ChartTitle>
-                <ChartPlaceholder>차트</ChartPlaceholder>
-                </ChartBox>
-                <ChartBox>
-                <ChartTitle>나이</ChartTitle>
-                <ChartPlaceholder>차트</ChartPlaceholder>
-                </ChartBox>
-                <ChartBox>
-                <ChartTitle>결혼</ChartTitle>
-                <ChartPlaceholder>차트</ChartPlaceholder>
-                </ChartBox>
-            </ChartRow>
-            </ChartGridContainer>
-            
-        </SummaryCard>
-    </ResultsPageContainer>
-    );
+                <ChartGridContainer>
+                    {/* 첫 번째 행: 차트 2개 */}
+                    <ChartRow>
+                        <CategoryPieChart title="Fruit" data={fruitData} />
+                        <CategoryPieChart title="meat" data={meatData} isDoughnut={true} />
+                    </ChartRow>
+
+                    {/* 두 번째 행: 차트 3개 */}
+                    <ChartRow>
+                        <CategoryPieChart title="직업" data={jobData} />
+                        <CategoryPieChart title="나이" data={ageData} />
+                        <CategoryPieChart title="결혼" data={marriageData} />
+                    </ChartRow>
+                </ChartGridContainer>
+
+            </SummaryCard>
+        </ResultsPageContainer>
+    ); 
 };
 
 export default ResultsPage;
