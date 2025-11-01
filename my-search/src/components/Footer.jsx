@@ -6,11 +6,12 @@ const FooterContainer = styled.footer`
     width: 100%; /* 너비는 100%로 유지 */
     
     padding-top: 40px;
-    padding-top: 40px;
+    padding-bottom: 40px;
     
     margin-top: auto; 
     z-index: 10;
-    display: center;
+
+    display: flex;
     justify-content: center;
 `;
 
