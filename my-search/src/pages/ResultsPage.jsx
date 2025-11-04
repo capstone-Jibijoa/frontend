@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import SearchBar from '../components/SearchBar'; // 메인페이지 검색창 재사용
 import CategoryPieChart from '../components/CategoryPieChart'; // 차트 컴포넌트 재사용
 
@@ -97,6 +97,16 @@ const TableBody = styled.tbody`
     }
 `;
 
+const StyledLink = styled(Link)`
+    color: #374151; /* 테이블 텍스트와 동일한 색상 */
+    text-decoration: none; /* 밑줄 제거 */
+
+    :hover {
+    text-decoration: underline; /* 마우스 올리면 밑줄 표시 */
+    color: #D466C9; /* 포인트 컬러 */
+    }
+`;
+
 // 페이징 버튼을 감싸는 컨테이너
 const PaginationContainer = styled.nav`
     display: flex;
@@ -141,59 +151,90 @@ const PageButton = styled.button`
         background-color: #f9fafb;
     }
 `;
-const fruitData = [
-    { name: 'egg fruit', value: 15 },
-    { name: 'apple', value: 23 },
-    { name: 'banana', value: 19 },
-    { name: 'carrot', value: 15 },
-    { name: 'dewberry', value: 27 },
-];
-
-const meatData = [
-    { name: 'duck', value: 15 },
-    { name: 'pork', value: 23 },
-    { name: 'beef', value: 19 },
-    { name: 'chicken', value: 15 },
-    { name: 'lamb', value: 27 },
-];
-
-const jobData = [
-    { name: 'A', value: 15 },
-    { name: 'B', value: 23 },
-    { name: 'C', value: 19 },
-    { name: 'D', value: 15 },
-    { name: 'E', value: 27 },
-];
-
-const allTableData = [
-    { id: 1, name: 'John Doe', age: 28, job: 'Developer', married: 'Yes' },
-    { id: 2, name: 'Jane Smith', age: 34, job: 'Designer', married: 'No' },
-    { id: 3, name: 'Sam Wilson', age: 45, job: 'Manager', married: 'Yes' },
-    { id: 4, name: 'Alice Brown', age: 23, job: 'Engineer', married: 'No' },
-    { id: 5, name: 'Bob Johnson', age: 31, job: 'Analyst', married: 'Yes' },
-    { id: 6, name: 'Chris Lee', age: 39, job: 'Doctor', married: 'No' },
-    { id: 7, name: 'Patricia Williams', age: 25, job: 'Artist', married: 'No' },
-    { id: 8, name: 'Michael Davis', age: 41, job: 'Teacher', married: 'Yes' },
-    { id: 9, name: 'Linda Miller', age: 29, job: 'Writer', married: 'Yes' },
-    { id: 10, name: 'David Garcia', age: 36, job: 'Pilot', married: 'No' },
-    { id: 11, name: 'Sarah Martinez', age: 30, job: 'Chef', married: 'Yes' },
-    { id: 12, name: 'James Rodriguez', age: 27, job: 'Musician', married: 'No' }
-];
-
-const ageData = jobData;
-const marriageData = jobData;
 
 const ResultsPage = () => {
     const [searchParams] = useSearchParams();
     const query = searchParams.get('q');
+    // 로딩 상태를 저장
+    const [isLoading, setIsLoading] = useState(true);
+    // 에러 상태를 저장
+    const [error, setError] = useState(null);
+    // 백엔드에서 받아온 데이터를 저장
+    const [chartData, setChartData] = useState({});
+    const [tableData, setTableData] = useState([]);
+
     const [currentPage, setCurrentPage] = useState(1);
+
+    useEffect(() => { // 검색어가 없으면 요청하지 않음
+        if (!query) {
+            setIsLoading(false);
+            return;
+        }
+
+        const fetchData = async () => {
+            setIsLoading(true); // 로딩 시작
+            setError(null);     // 이전 에러 초기화
+
+            try {
+                // ~~~ 부분을 실제 백엔드 주소로 바꾸기
+                const response = await fetch(`~~~/search?q=${query}`);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                // 우선 데이터 형식 가정 반드시 수정
+                setChartData({
+                    fruit: data.fruitData || [],
+                    meat: data.meatData || [],
+                    job: data.jobData || [],
+                    age: data.ageData || [],
+                    marriage: data.marriageData || []
+                });
+                setTableData(data.tableData || []);
+            } catch(e) {
+                console.error("Fetch error:", e);
+                setError(e.message);
+            } finally {
+                setIsLoading(false); // 로딩 끝
+                setCurrentPage(1); // 1페이지로 리셋
+            }
+        };
+
+        fetchData();
+    }, [query]);
+
     const itemsPerPage = 5;
     // 총 아이템을 5로 나눈 값을 올림
-    const totalPages = Math.ceil(allTableData.length / itemsPerPage);
+    const totalPages = Math.ceil(tableData.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage; // 시작 인덱스
-    const currentTableData = allTableData.slice(startIndex, startIndex + itemsPerPage);
+    const currentTableData = tableData.slice(startIndex, startIndex + itemsPerPage);
     // 1페이지부터 마지막페이지까지 담는 배열
     const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
+
+    if (isLoading) {
+        return (
+        <ResultsPageContainer>
+            <SearchBar defaultQuery={query} />
+            <SectionTitle style={{ marginTop: '40px', color: 'red' }}>
+            "{query}"에 대한 검색 결과를 불러오는 중...
+            </SectionTitle>
+        </ResultsPageContainer>
+        );
+    }
+
+    if (error) {
+    return (
+        <ResultsPageContainer>
+            <SearchBar defaultQuery={query} />
+            <SectionTitle style={{ marginTop: '40px', color: 'red' }}>
+            데이터 로드 실패: {error}
+            </SectionTitle>
+        </ResultsPageContainer>
+        );
+    }
     return (
         <ResultsPageContainer>
             <SearchBar defaultQuery={query} />
@@ -204,15 +245,15 @@ const ResultsPage = () => {
                 <ChartGridContainer>
                     {/* 첫 번째 행: 차트 2개 */}
                     <ChartRow>
-                        <CategoryPieChart title="Fruit" data={fruitData} />
-                        <CategoryPieChart title="meat" data={meatData} isDoughnut={true} />
+                        <CategoryPieChart title="Fruit" data={chartData.fruitData} />
+                        <CategoryPieChart title="meat" data={chartData.meatData} isDoughnut={true} />
                     </ChartRow>
 
                     {/* 두 번째 행: 차트 3개 */}
                     <ChartRow>
-                        <CategoryPieChart title="직업" data={jobData} />
-                        <CategoryPieChart title="나이" data={ageData} />
-                        <CategoryPieChart title="결혼" data={marriageData} />
+                        <CategoryPieChart title="직업" data={chartData.jobData} />
+                        <CategoryPieChart title="나이" data={chartData.ageData} />
+                        <CategoryPieChart title="결혼" data={chartData.marriageData} />
                     </ChartRow>
                 </ChartGridContainer>
 
@@ -233,7 +274,10 @@ const ResultsPage = () => {
                         {/* tableData를 map으로 돌려 행을 만듧*/}
                         {currentTableData.map((row) => (
                         <tr key={row.id}>
-                            <td>{row.id}</td>
+                            <td>
+                                <StyledLink to={`/detail/${row.id}`}>{row.id}
+                                </StyledLink>
+                            </td>
                             <td>{row.name}</td>
                             <td>{row.age}</td>
                             <td>{row.job}</td>
@@ -245,7 +289,10 @@ const ResultsPage = () => {
             </TableCard>
             <PaginationContainer>
                 <PageButton>{'<<'}</PageButton>
-                <PageButton disabled={currentPage === 1} onclick={() => setCurrentPage(currentPage - 1)}>{'<'}</PageButton>
+                <PageButton 
+                    disabled={currentPage === 1} 
+                    onClick={() => setCurrentPage(currentPage - 1)}>{'<'}
+                </PageButton>
                 {/* map을 통해 페이지 번호 동적 생성*/}
                 {pageNumbers.map((pageNumber) => (
                     <PageButton
@@ -258,7 +305,7 @@ const ResultsPage = () => {
                 ))}
                 <PageButton 
                     disabled={currentPage === totalPages} 
-                    onclick={() => setCurrentPage(currentPage + 1)}
+                    onClick={() => setCurrentPage(currentPage + 1)}
                 >
                     {'>'}
                 </PageButton>
