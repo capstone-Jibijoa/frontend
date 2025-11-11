@@ -6,7 +6,7 @@ import styled from 'styled-components';
 const SearchContainer = styled.div`
     position: relative;
     width: 50%;
-    margin-top: ${props => (props.marginTop !== undefined ? props.marginTop : '30px')};
+    margin-top: ${props => (props.$marginTop !== undefined ? props.marginTop : '30px')};
 `;
 
 // 검색어 스타일(placeholder 포함)
@@ -68,7 +68,7 @@ const SearchBar = ({ defaultQuery = '', marginTop }) => {
     };
 
     return (
-        <SearchContainer marginTop={marginTop}>
+        <SearchContainer $marginTop={marginTop}>
         <SearchInput
             type="text"
             placeholder="궁금한 모든 것을 검색해 보세요"

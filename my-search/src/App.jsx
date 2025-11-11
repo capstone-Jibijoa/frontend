@@ -15,7 +15,7 @@ function App() {
         <Route path="/search" element={<ResultsPage />} />
 
         {/* /detail 주소로 오면 DetailPage */}
-        <Route path="/detail/:id" element={<DetailPage />} />
+        <Route path="/detail/:panel_id" element={<DetailPage />} />
       </Routes>
     </BrowserRouter>
   );
