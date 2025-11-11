@@ -8,12 +8,13 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* 기본 주소('/')로 오면 MainPage를 보여줘! */}
+        {/* 기본 주소로 오면 MainPage */}
         <Route path="/" element={<MainPage />} />
 
-        {/* '/search' 주소로 오면 ResultsPage를 보여줘! */}
+        {/* /search 주소로 오면 ResultsPage */}
         <Route path="/search" element={<ResultsPage />} />
 
+        {/* /detail 주소로 오면 DetailPage */}
         <Route path="/detail/:id" element={<DetailPage />} />
       </Routes>
     </BrowserRouter>

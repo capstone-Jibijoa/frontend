@@ -1,16 +1,16 @@
 import React from 'react';
 import styled from 'styled-components';
-// 1. assets 폴더에서 이미지를 import 합니다.
+// assets 폴더에서 이미지를 import
 import dashboardMockup from '../assets/dashboard.png';
 
 const DashboardContainer = styled.section`
-  width: 900px;
+  width: 600px;
   max-width: 1010px;
-  margin-top: 80px; /* 간격 살짝 조정 */
-  margin-bottom: 100px;
+  margin-top: 70px;
+  margin-bottom: 160px;
 `;
 
-// 2. img 태그에 직접 스타일을 적용합니다.
+// img 태그에 직접 스타일을 적용
 const DashboardImage = styled.img`
   width: 100%;
   border-radius: 16px;
@@ -20,7 +20,7 @@ const DashboardImage = styled.img`
 const Dashboard = () => {
   return (
     <DashboardContainer>
-      {/* 3. src에 import한 이미지를 연결합니다. */}
+      {/* src에 import한 이미지를 연결 */}
       <DashboardImage src={dashboardMockup} alt="Project Dashboard Mockup" />
     </DashboardContainer>
   );

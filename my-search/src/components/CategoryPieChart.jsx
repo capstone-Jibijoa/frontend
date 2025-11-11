@@ -2,17 +2,17 @@ import React from 'react';
 import styled from 'styled-components';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
-// 차트 하나하나를 감싸는 박스 (ResultsPage에서 가져옴)
+// 차트 하나하나를 감싸는 박스
 const ChartBox = styled.div`
     flex: 1;
     border: 1px solid #e5e7eb;
     border-radius: 8px;
     padding: 16px;
     background-color: #ffffff;
-    min-width: 200px; /* 차트가 너무 찌그러지지 않게 최소 너비 설정 */
+    min-width: 200px; /* 차트의 최소 너비 설정 */
 `;
 
-// 차트 제목 (ResultsPage에서 가져옴)
+// 차트 제목
 const ChartTitle = styled.h3`
     font-size: 18px;
     font-weight: 600;
@@ -22,8 +22,8 @@ const ChartTitle = styled.h3`
     text-align: center;
 `;
 
-// 피그마 디자인과 유사한 색상 팔레트
-const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#a4de6c', '#d0ed57'];
+// 차트에 사용할 색상
+const COLORS = ['#D64392', '#8A4AD6', '#4171D6',  '#2F9CA9', '#289C5E', '#C7952C', '#D9534F'];
 
 // 차트에 퍼센트(%) 라벨을 예쁘게 표시하기 위한 헬퍼 함수
 const RADIAN = Math.PI / 180;
@@ -40,12 +40,12 @@ const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, per
 };
 
 // 'title', 'data', 'isDoughnut'을 props로 받는 컴포넌트
-const CategoryPieChart = ({ title, data, isDoughnut = false }) => {
+const CategoryPieChart = ({ title, data }) => {
     return (
         <ChartBox>
         <ChartTitle>{title}</ChartTitle>
-        {/* ResponsiveContainer는 차트가 부모(ChartBox) 크기에 맞춰 반응형으로 작동하게 함 */}
-        <ResponsiveContainer width="100%" height={250}>
+        {/* ResponsiveContainer로 인해 차트가 부모(ChartBox) 크기에 맞춰 반응형으로 작동 */}
+        <ResponsiveContainer width="100%" height={250}> 
             <PieChart>
             <Pie
                 data={data}
@@ -54,8 +54,7 @@ const CategoryPieChart = ({ title, data, isDoughnut = false }) => {
                 labelLine={false}
                 label={renderCustomizedLabel} // 위에서 만든 퍼센트 라벨 함수 적용
                 outerRadius={100}
-                // 'meat' 차트처럼 도넛 모양이 필요하면 innerRadius를 줍니다.
-                innerRadius={isDoughnut ? 60 : 0} 
+                //innerRadius={isDoughnut ? 60 : 0} // 도넛 모양의 함수를 위해 innerRadius 사용
                 fill="#8884d8"
                 dataKey="value" // 'value' 키에 있는 숫자를 기준으로 차트를 그림
             >
