@@ -30,57 +30,6 @@ const transformChartData = (chartValuesObject) => {
     }));
 };
 
-// 임시로 사용할 샘플 데이터
-const createMockSearchData = (query) => {
-    let major_fields = ["birth_year", "region"];
-    let dynamicCharts = [
-        {
-            "topic": `"${query}" 연령대 분석`,
-            "chart_data": [ { "values": { "20대": 10, "30대": 20, "40대": 30, "50대": 20, "60대": 10}}]
-        },
-        { 
-            "topic": `"${query}" 연관 주제 (결혼)`, 
-            "chart_data": [ { "values": { "기혼": 60, "미혼": 40 } } ] 
-        },
-        { 
-            "topic": "주요 직업", 
-            "chart_data": [ { "values": { "전문직": 33, "사무직": 34, "일용직": 33} } ] 
-        }
-    ]; // (차트 데이터...)
-    if (query.includes("서울")) {
-        dynamicCharts.push({
-            "topic": "서울 거주자 소득",
-            "chart_data": [ { "values": { "500이상": 80, "500미만": 20 } } ]
-        });
-    }
-    if (query.includes("차량")) {
-        major_fields = ["car_ownership", "job_title_raw"];
-    }
-
-    return {
-        "analysis_report": dynamicCharts,
-        "major_fields": major_fields, // 
-        "results": [ // 
-        { "uid": 1001 },
-        { "uid": 1002 },
-        { "uid": 1003 },
-        { "uid": 1004 },
-        { "uid": 1005 },
-        { "uid": 1006 }
-        ]
-    };
-};
-
-const createMockDetailData = (uid) => {
-    return {
-        "uid": uid,
-        "birth_year": 1990 + (uid % 5), // 
-        "region": (uid % 2 === 0) ? "서울" : "경기",
-        "job_title_raw": (uid % 2 === 0) ? "개발자" : "디자이너",
-        "car_ownership": (uid % 3 === 0) ? "보유" : "없음",
-        "marital_status": "기혼"
-    };
-};
 const ResultsPage = () => {
     const [searchParams] = useSearchParams();
     const query = searchParams.get('q');
@@ -100,42 +49,50 @@ const ResultsPage = () => {
             setIsLoading(false);
             return;
         }
-        /* 실제 사용할 것임
+        
         const fetchData = async () => {
             setIsLoading(true); // 로딩 시작
             setError(null);     // 이전 에러 초기화
 
             try {
                 // 실제 AWS 서버주소로 변경
-                const searchResponse = await fetch(`[AWS 서버 주소]/api/search`, {
+                const searchResponse = await fetch(`http://localhost:8000/api/search-and-analyze`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ query: query })
                 });
 
                 if (!searchResponse.ok) {
-                    throw new Error(`HTTP eror! status: ${response.status}`);
+                    throw new Error(`HTTP error! status: ${searchResponse.status}`);
                 }
 
                 const data1 = await searchResponse.json();
-                const report = data1.analysis_report;
+                const report = data1.charts || [];
                 const transformedCharts = report.map(chart_raw => ({
                     title: chart_raw?.topic,
                     data: transformChartData(chart_raw?.chart_data[0]?.values) 
                 }));
                 setChartData(transformedCharts);
                 
-                // 주요 필드와 uid 저장
-                const uids = data1.results.map(row => row.uid);
-                setMajorFields(data1.major_fields || []);
+                // 주요 필드와 panel_id 저장
+                const panelIds = data1.final_panel_ids || [];
+                const fields = (data1.display_fields || []).map(item => item.field);
+                setMajorFields(fields);
 
-                // 2차 요청(uid 개수만큼 요청)
-                const detailPromises = uids.map(uid => 
-                    fetch(`[AWS 서버 주소]/api/detail/${uid}`).then(res => res.json())    
-                );
+                // 2차 요청(panel_id 개수만큼 요청)
+                const detailPromises = panelIds.map(panel_id => 
+                    fetch(`http://localhost:8000/api/panels/${panel_id}`).then(res => res.json())    
+                );  
 
                 const fullTableData = await Promise.all(detailPromises);
 
+                console.log("--- 디버깅 ---");
+                console.log("LLM이 정한 주요 필드 (majorFields):", fields);
+                if (fullTableData.length > 0) {
+                    console.log("DB에서 실제 받은 패널 데이터 (tableData[0]):", fullTableData[0]);
+                    console.log("DB 데이터의 모든 Key 목록:", Object.keys(fullTableData[0]));
+                }
+                console.log("--------------");
                 // 최종 데이터 저장
 
                 setTableData(fullTableData);
@@ -148,45 +105,6 @@ const ResultsPage = () => {
         };
 
         fetchData();
-        */
-
-        // 실험용 Fetch(서버와 연결되면 삭제)
-        const simulateFetch = async () => { // 
-            setIsLoading(true);
-            setError(null);
-            try {
-                // 1. 1차 요청 시뮬레이션
-                await new Promise(res => setTimeout(res, 500)); // 
-                const data1 = createMockSearchData(query);
-                
-                const report = data1.analysis_report;
-                const transformedCharts = report.map(chart_raw => ({
-                title: chart_raw?.topic,
-                data: transformChartData(chart_raw?.chart_data[0]?.values),
-                isDoughnut: false
-                }));
-                setChartData(transformedCharts);
-
-                // 1-2. '주요 필드'와 'UID 목록' 저장
-                const uids = data1.results.map(row => row.uid); 
-                setMajorFields(data1.major_fields || []);
-
-                // 2. 2차 요청 시뮬레이션
-                await new Promise(res => setTimeout(res, 500)); // 
-                const fullTableData = uids.map(uid => createMockDetailData(uid));
-                
-                // 3. 최종 데이터 저장
-                setTableData(fullTableData);
-
-            } catch (e) {
-                setError(e.message);
-            } finally {
-                setIsLoading(false);
-                setCurrentPage(1);
-            }
-        };
-        simulateFetch();
-
     }, [query]);
 
     const itemsPerPage = 5;
@@ -198,7 +116,7 @@ const ResultsPage = () => {
     const allKeys = tableData.length > 0 ? Object.keys(tableData[0]) : [];
     // 기타 키
     const otherKeys = allKeys.filter(key => 
-        key !== 'uid' && !majorFields.includes(key)
+        key !== 'panel_id' && !majorFields.includes(key)
     );
     const orderedHeaders = [...majorFields, ...otherKeys];
     const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
@@ -254,7 +172,7 @@ const ResultsPage = () => {
                         <tr>
                             <th>목록번호</th>
                             {orderedHeaders
-                            .filter(key => key !== 'uid')
+                            .filter(key => key !== 'panel_id')
                             .slice(0, 4)
                             .map((key) => (
                                 <th key={key}>
@@ -266,20 +184,30 @@ const ResultsPage = () => {
                     <TableBody>
                         {/* tableData를 map으로 돌려 행을 만듦*/}
                         {currentTableData.map((row, index) => (
-                        <tr key={row.uid || index}>
+                        <tr key={row.panel_id || index}>
                             <td>
-                                <StyledLink to={`/detail/${row.uid}`}>
+                                <StyledLink to={`/detail/${row.panel_id}`}>
                                     {startIndex + index + 1}
                                 </StyledLink>
                             </td>
 
-                            {orderedHeaders.filter(key => key !== 'uid')
+                            {orderedHeaders.filter(key => key !== 'panel_id')
                             .slice(0, 4)
                             .map((key) => {
                                 const value = row[key];
+                                let displayValue;
+                                
+                                if (typeof value === 'object' && value !== null) {
+                                    displayValue = '[Object]';
+                                } else if (value === undefined || value === null) {
+                                    displayValue = 'N/A';
+                                } else {
+                                    displayValue = String(value);
+                                }
+
                                 return (
                                     <td key={key}>
-                                        {String(value)}
+                                        {displayValue}
                                     </td>
                                 );
                             })}
