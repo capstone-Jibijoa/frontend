@@ -80,7 +80,7 @@ const DetailPage = () => {
                         return (
                             <InfoItem key={key}>
                                 <InfoKey>{label}</InfoKey>
-                                <InfoValue>{String(value)}</InfoValue>
+                                <InfoValue>{(value == null || value === '') ? '미응답' : String(value)}</InfoValue>
                             </InfoItem>
                         );
                     })}
