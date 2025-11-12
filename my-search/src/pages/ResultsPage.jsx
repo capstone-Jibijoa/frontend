@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import SearchBar from '../components/SearchBar'; // 메인페이지 검색창 재사용
 import CategoryPieChart from '../components/CategoryPieChart'; // 차트 컴포넌트 재사용
 import LoadingIndicator from '../components/LoadingIndicator';
@@ -32,6 +32,7 @@ const transformChartData = (chartValuesObject) => {
 
 const ResultsPage = () => {
     const [searchParams] = useSearchParams();
+    const navigate = useNavigate();
     const query = searchParams.get('q');
     // 로딩 상태를 저장
     const [isLoading, setIsLoading] = useState(true);
@@ -107,7 +108,7 @@ const ResultsPage = () => {
         fetchData();
     }, [query]);
 
-    const itemsPerPage = 5;
+    const itemsPerPage = 10;
     // 총 아이템을 5로 나눈 값을 올림
     const totalPages = Math.ceil(tableData.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage; // 시작 인덱스
@@ -121,6 +122,9 @@ const ResultsPage = () => {
     const orderedHeaders = [...majorFields, ...otherKeys];
     const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
 
+    const handleRowClick = (panel_id) => {
+        navigate(`/detail/${panel_id}`);
+    }
     if (isLoading) {
         return (
         <ResultsPageContainer>
@@ -184,11 +188,13 @@ const ResultsPage = () => {
                     <TableBody>
                         {/* tableData를 map으로 돌려 행을 만듦*/}
                         {currentTableData.map((row, index) => (
-                        <tr key={row.panel_id || index}>
+                        <tr 
+                            key={row.panel_id || index}
+                            onClick={() => handleRowClick(row.panel_id)}
+                            style={{ cursor: 'pointer' }}
+                        >
                             <td>
-                                <StyledLink to={`/detail/${row.panel_id}`}>
-                                    {startIndex + index + 1}
-                                </StyledLink>
+                                {startIndex + index + 1}
                             </td>
 
                             {orderedHeaders.filter(key => key !== 'panel_id')

@@ -2,7 +2,6 @@ import styled from "styled-components";
 
 // 페이지 전체를 감싸는 컨테이너
 export const PageWrapper = styled.div`
-    max-width: 1440px;
     width: 100%;
     height: 100vh;
     max-height: 100vh;

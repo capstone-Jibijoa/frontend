@@ -1,7 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
 import SearchBar from '../components/SearchBar';
-import Dashboard from '../components/DashBoard';
 import Footer from '../components/Footer';
 import { PageWrapper, Headline } from '../style/MainPage.styles';
 

@@ -10,6 +10,7 @@ const ChartBox = styled.div`
     padding: 16px;
     background-color: #ffffff;
     min-width: 200px; /* 차트의 최소 너비 설정 */
+    min-height: 300px; /* 차트 박스의 최소 높이 설정 */
 `;
 
 // 차트 제목
@@ -28,9 +29,13 @@ const COLORS = ['#D64392', '#8A4AD6', '#4171D6',  '#2F9CA9', '#289C5E', '#C7952C
 // 차트에 퍼센트(%) 라벨을 예쁘게 표시하기 위한 헬퍼 함수
 const RADIAN = Math.PI / 180;
 const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
-  const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-  const x = cx + radius * Math.cos(-midAngle * RADIAN);
-  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+    if (percent < 0.1) {
+        return null;
+    }
+
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
 
     return (
         <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central">
@@ -39,13 +44,21 @@ const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, per
     );
 };
 
-// 'title', 'data', 'isDoughnut'을 props로 받는 컴포넌트
+// 항목 길이가 너무 길면 '...'으로 줄이는 함수
+const renderLegendText = (value) => {
+    const maxLength = 15;
+    if (value.length > maxLength) {
+        return `${value.substring(0, maxLength)}...`;
+    }
+}
+
+// 'title', 'data'을 props로 받는 컴포넌트
 const CategoryPieChart = ({ title, data }) => {
     return (
         <ChartBox>
         <ChartTitle>{title}</ChartTitle>
         {/* ResponsiveContainer로 인해 차트가 부모(ChartBox) 크기에 맞춰 반응형으로 작동 */}
-        <ResponsiveContainer width="100%" height={250}> 
+        <ResponsiveContainer width="100%" height={300}> 
             <PieChart>
             <Pie
                 data={data}
@@ -54,7 +67,6 @@ const CategoryPieChart = ({ title, data }) => {
                 labelLine={false}
                 label={renderCustomizedLabel} // 위에서 만든 퍼센트 라벨 함수 적용
                 outerRadius={100}
-                //innerRadius={isDoughnut ? 60 : 0} // 도넛 모양의 함수를 위해 innerRadius 사용
                 fill="#8884d8"
                 dataKey="value" // 'value' 키에 있는 숫자를 기준으로 차트를 그림
             >
@@ -62,8 +74,8 @@ const CategoryPieChart = ({ title, data }) => {
                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
             </Pie>
-            <Tooltip /> {/* 마우스를 올렸을 때 정보 표시 */}
-            <Legend /> {/* 차트 하단의 범례 표시 */}
+            <Tooltip formatter={(value) => `${value}%`} /> {/* 마우스를 올렸을 때 정보 표시 */}
+            <Legend formatter={renderLegendText} /> {/* 차트 하단의 범례 표시 */}
             </PieChart>
         </ResponsiveContainer>
         </ChartBox>
