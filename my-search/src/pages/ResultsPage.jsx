@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { useSearchParams, Link, useNavigate } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import SearchBar from '../components/SearchBar'; // 메인페이지 검색창 재사용
 import CategoryPieChart from '../components/CategoryPieChart'; // 차트 컴포넌트 재사용
 import LoadingIndicator from '../components/LoadingIndicator';
@@ -32,7 +32,6 @@ const transformChartData = (chartValuesObject) => {
 
 const ResultsPage = () => {
     const [searchParams] = useSearchParams();
-    const navigate = useNavigate();
     const query = searchParams.get('q');
     // 로딩 상태를 저장
     const [isLoading, setIsLoading] = useState(true);
@@ -52,16 +51,22 @@ const ResultsPage = () => {
         }
         
         const fetchData = async () => {
+            console.time('🔍 검색 총 소요 시간');
             setIsLoading(true); // 로딩 시작
             setError(null);     // 이전 에러 초기화
 
             try {
+                const startTime = performance.now();
                 // 실제 AWS 서버주소로 변경
                 const searchResponse = await fetch(`http://localhost:8000/api/search-and-analyze`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ query: query })
                 });
+
+                const endTime = performance.now();
+                const duration = endTime - startTime;
+                console.log(`⏱️ API 응답 시간: ${duration.toFixed(2)}ms`);
 
                 if (!searchResponse.ok) {
                     throw new Error(`HTTP error! status: ${searchResponse.status}`);
@@ -102,13 +107,14 @@ const ResultsPage = () => {
             } finally {
                 setIsLoading(false); // 로딩 끝
                 setCurrentPage(1); // 1페이지로 리셋
+                console.timeEnd('🔍 검색 총 소요 시간');
             }
         };
 
         fetchData();
     }, [query]);
 
-    const itemsPerPage = 10;
+    const itemsPerPage = 5;
     // 총 아이템을 5로 나눈 값을 올림
     const totalPages = Math.ceil(tableData.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage; // 시작 인덱스
@@ -119,12 +125,9 @@ const ResultsPage = () => {
     const otherKeys = allKeys.filter(key => 
         key !== 'panel_id' && !majorFields.includes(key)
     );
-    const orderedHeaders = [...majorFields, ...otherKeys];
+    const orderedHeaders = [...new Set([...majorFields, ...otherKeys])];
     const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
 
-    const handleRowClick = (panel_id) => {
-        navigate(`/detail/${panel_id}`);
-    }
     if (isLoading) {
         return (
         <ResultsPageContainer>
@@ -188,13 +191,11 @@ const ResultsPage = () => {
                     <TableBody>
                         {/* tableData를 map으로 돌려 행을 만듦*/}
                         {currentTableData.map((row, index) => (
-                        <tr 
-                            key={row.panel_id || index}
-                            onClick={() => handleRowClick(row.panel_id)}
-                            style={{ cursor: 'pointer' }}
-                        >
+                        <tr key={row.panel_id || index}>
                             <td>
-                                {startIndex + index + 1}
+                                <StyledLink to={`/detail/${row.panel_id}`}>
+                                    {startIndex + index + 1}
+                                </StyledLink>
                             </td>
 
                             {orderedHeaders.filter(key => key !== 'panel_id')
