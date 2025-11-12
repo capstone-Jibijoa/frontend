@@ -76,7 +76,8 @@ const ResultsPage = () => {
                 setChartData(transformedCharts);
                 
                 // 주요 필드와 panel_id 저장
-                const panelIds = data1.final_panel_ids || [];
+                const originalPanelIds = data1.final_panel_ids || [];
+                const panelIds = originalPanelIds.filter(Boolean);
                 const fields = (data1.display_fields || []).map(item => item.field);
                 setMajorFields(fields);
 
@@ -130,10 +131,25 @@ const ResultsPage = () => {
         <ResultsPageContainer>
             <SearchBar defaultQuery={query} />
             <LoadingIndicator 
-                message={`"${query}"에 대한 검색 결과를 불러오는 중...`} 
+                message={`검색 결과를 불러오는 중...`} 
             />
         </ResultsPageContainer>
         );
+    }
+
+    if (tableData.length ===0) {
+        <ResultsPageContainer>
+            <SearchBar defaultQuery={query} />
+            <SectionTitle
+                style={{
+                    marginTop: '60px',
+                    textAlign: 'center',
+                    color: '#6b7280'
+                }}
+            >
+                '{query}'에 대한 검색 결과가 없습니다.
+            </SectionTitle>
+        </ResultsPageContainer>
     }
 
     if (error) {
@@ -143,14 +159,6 @@ const ResultsPage = () => {
             <SectionTitle style={{ marginTop: '40px', color: 'red' }}>
             데이터 로드 실패: {error}
             </SectionTitle>
-
-            {/* 임시로 사용할 DetailPage로 넘어가는 버튼 */}
-            <div style={{ marginTop: '20px', textAlign: 'center' }}>
-            <p>상세페이지 연결</p>
-            <Link to="/detail/A1-Test" style={{ textDecoration: 'none' }}>
-                <PageButton>임시 상세 페이지로 이동</PageButton>
-            </Link>
-            </div>
         </ResultsPageContainer>
         );
     }
@@ -194,7 +202,9 @@ const ResultsPage = () => {
                             style={{ cursor: 'pointer' }}
                         >
                             <td>
-                                {startIndex + index + 1}
+                                <StyledLink to={`/detail/${row.panel_id}`}>
+                                    {startIndex + index + 1}
+                                </StyledLink>
                             </td>
 
                             {orderedHeaders.filter(key => key !== 'panel_id')
@@ -203,10 +213,10 @@ const ResultsPage = () => {
                                 const value = row[key];
                                 let displayValue;
                                 
-                                if (typeof value === 'object' && value !== null) {
-                                    displayValue = '[Object]';
-                                } else if (value === undefined || value === null) {
-                                    displayValue = 'N/A';
+                                if (value == null || value === '') {
+                                    displayValue = '미응답';
+                                } else if (typeof value === 'object') {
+                                    displayValue = '[데이터]';
                                 } else {
                                     displayValue = String(value);
                                 }
@@ -237,7 +247,7 @@ const ResultsPage = () => {
                 {pageNumbers.map((pageNumber) => (
                     <PageButton
                         key={pageNumber}
-                        active={currentPage === pageNumber}
+                        $active={currentPage === pageNumber}
                         onClick={() => setCurrentPage(pageNumber)}
                     >
                         {pageNumber}

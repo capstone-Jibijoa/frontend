@@ -151,8 +151,8 @@ export const PageButton = styled.button`
     }
 
     /* 'active' prop이 true일 때 적용될 스타일 */
-    ${(props)
-        props.active &&
+    ${(props) =>
+        props.$active &&
         `
         background-color: #D466C9;
         border-color: #D466C9;
