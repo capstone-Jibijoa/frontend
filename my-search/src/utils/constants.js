@@ -15,6 +15,7 @@ export const KEY_TO_LABEL_MAP = {
     "gender": "성별",
     "region": "지역",
     "region_minor": "상세 지역",
+    "region_major": "지역",
     "car_manufacturer": "제조사"
     // 밑으로 계속 추가 가능
 };
