@@ -85,6 +85,10 @@ export const TableHead = styled.thead`
         color: #6b7280; /* 연한 회색 글씨 */
         padding: 12px 16px;
         border-bottom: 2px solid #e5e7eb;
+        text-align: center;
+        &:first-child {
+            text-align: left;
+        }
     }
 `;
 
@@ -102,6 +106,10 @@ export const TableBody = styled.tbody`
         color: #374151; /* 진한 회색 글씨 */
         padding: 12px 16px;
         border-bottom: 1px solid #e5e7eb;
+        text-align: center;
+        &:first-child {
+            text-align: left;
+        }
     }
 `;
 
@@ -143,7 +151,7 @@ export const PageButton = styled.button`
     }
 
     /* 'active' prop이 true일 때 적용될 스타일 */
-    ${(props) =>
+    ${(props)
         props.active &&
         `
         background-color: #D466C9;
