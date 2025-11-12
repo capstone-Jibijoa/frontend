@@ -14,12 +14,15 @@ const SearchContainer = styled.div`
 const SearchInput = styled.input`
     width: 100%;
     height: 56px;
-    padding: 0 10px;
+    /* padding: 0 10px; */
+    padding: 0 60px 0 20px;
+    box-sizing: border-box;
     border-radius: 28px;
     border: 1px solid #D466C9;
     font-size: 16px;
     box-shadow: 0px 8px 24px rgba(17, 17, 26, 0.05);
-    text-align: center;
+    /* text-align: center; */
+    text-align: ${props => (props.$hasValue ? 'left' : 'center')};
 
     &::placeholder {
         color: #999;
@@ -95,6 +98,7 @@ const SearchBar = ({ defaultQuery = '', marginTop }) => {
             onKeyDown={handleKeyDown} // Enter 키 이벤트 연결
             onFocus={handleFocus}
             onBlur={handleBlur}
+            $hasValue={query.length > 0}
         />
         <SearchIcon onClick={handleSearch}> {/* 클릭 이벤트 연결 */}
             <svg // 확대해도 깨지지 않게 하기위해 svg를 사용
