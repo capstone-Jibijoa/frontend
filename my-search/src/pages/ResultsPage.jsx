@@ -52,11 +52,11 @@ const ResultsPage = () => {
         }
         
         const fetchData = async () => {
+            console.time("API 요청 + 데이터 처리");
             setIsLoading(true); // 로딩 시작
             setError(null);     // 이전 에러 초기화
 
             try {
-                // 실제 AWS 서버주소로 변경
                 const searchResponse = await fetch(`http://localhost:8000/api/search-and-analyze`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -76,17 +76,10 @@ const ResultsPage = () => {
                 setChartData(transformedCharts);
                 
                 // 주요 필드와 panel_id 저장
-                const originalPanelIds = data1.final_panel_ids || [];
-                const panelIds = originalPanelIds.filter(Boolean);
                 const fields = (data1.display_fields || []).map(item => item.field);
                 setMajorFields(fields);
 
-                // 2차 요청(panel_id 개수만큼 요청)
-                const detailPromises = panelIds.map(panel_id => 
-                    fetch(`http://localhost:8000/api/panels/${panel_id}`).then(res => res.json())    
-                );  
-
-                const fullTableData = await Promise.all(detailPromises);
+                const fullTableData = data1.tableData || [];
 
                 console.log("--- 디버깅 ---");
                 console.log("LLM이 정한 주요 필드 (majorFields):", fields);
@@ -101,8 +94,11 @@ const ResultsPage = () => {
             } catch(e) {
                 setError(e.message);
             } finally {
+
                 setIsLoading(false); // 로딩 끝
                 setCurrentPage(1); // 1페이지로 리셋
+
+                console.timeEnd("API 요청 + 데이터 처리");
             }
         };
 
@@ -120,7 +116,7 @@ const ResultsPage = () => {
     const otherKeys = allKeys.filter(key => 
         key !== 'panel_id' && !majorFields.includes(key)
     );
-    const orderedHeaders = [...majorFields, ...otherKeys];
+    const orderedHeaders = [...new Set([...majorFields, ...otherKeys])];
     const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
 
     const handleRowClick = (panel_id) => {
@@ -138,7 +134,8 @@ const ResultsPage = () => {
     }
 
     if (tableData.length ===0) {
-        <ResultsPageContainer>
+        return (
+            <ResultsPageContainer>
             <SearchBar defaultQuery={query} />
             <SectionTitle
                 style={{
@@ -150,6 +147,7 @@ const ResultsPage = () => {
                 '{query}'에 대한 검색 결과가 없습니다.
             </SectionTitle>
         </ResultsPageContainer>
+        )
     }
 
     if (error) {

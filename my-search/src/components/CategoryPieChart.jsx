@@ -10,7 +10,7 @@ const ChartBox = styled.div`
     padding: 16px;
     background-color: #ffffff;
     min-width: 200px; /* 차트의 최소 너비 설정 */
-    min-height: 300px; /* 차트 박스의 최소 높이 설정 */
+    min-height: 350px; /* 차트 박스의 최소 높이 설정 */
 `;
 
 // 차트 제목
