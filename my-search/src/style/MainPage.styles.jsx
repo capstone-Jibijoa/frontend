@@ -1,4 +1,17 @@
-import styled from "styled-components";
+import styled, { keyframes } from "styled-components";
+
+// 배경색 그라데이션 애니메이션
+const moveGradient = keyframes`
+    0% {
+        background-position: 0% 0%;
+    }
+    50% {
+        background-position: 100% 100%;
+    }
+    100% {
+        background-position: 0% 0%;
+    }
+`;
 
 // 페이지 전체를 감싸는 컨테이너
 export const PageWrapper = styled.div`
@@ -6,24 +19,35 @@ export const PageWrapper = styled.div`
     height: 100vh;
     max-height: 100vh;
     margin: 0 auto;
-    padding: 100px 80px 0px 80px;
+    padding: 95px 80px 0px 80px;
     box-sizing: border-box;
 
-    background: linear-gradient(
-        170deg, 
-        #c157eb 0%,
-        #f8b9bf 25%,
-        #FBFAFA 40%,
-        #FBFAFA 60%,
-        #8540cf 85%,
-        #780aee 100%
-    );
+    background: 
+        linear-gradient(
+            0deg, 
+            rgba(255, 215, 0, 0.6) 0%, /* 골드 옐로우 */
+            transparent 30%,
+            rgba(255, 215, 0, 0.6) 100%  /* 살구색(Apricot) */
+        ),
+        /* 그 아래에 깔릴 베이스 그라데이션 */
+        linear-gradient(
+            -70deg, 
+            rgba(207, 87, 195, 1) 0%,  /* 핑크 (75%) */
+            rgba(250, 205, 211, 1) 50%, /* 핑크/살구 (75%) */
+            rgba(120, 10, 238, 1) 100% /* 진한 보라 (75%) */
 
-    /* 내부 콘텐츠들을 정렬 */
+        ); 
+
+
+    background-size: 400% 400%;
+    animation: ${moveGradient} 10s ease infinite;
+
+  /* 내부 콘텐츠들을 정렬 */
     display: flex;
     flex-direction: column;
     align-items: center;
 `;
+
 // 헤드라인 스타일
 export const Headline = styled.h1`
     font-size: 76px;
