@@ -12,11 +12,11 @@ function App() {
         {/* 기본 주소로 오면 MainPage */}
         <Route path="/" element={<MainPage />} />
 
-        {/* /search 주소로 오면 ResultsPage */}
-        <Route path="/search" element={<ResultsPage />} />
+        {/* /results 주소로 오면 ResultsPage */}
+        <Route path="/results" element={<ResultsPage />} />
 
-        {/* search-lite 주소로 오면 ResultsLitePage */}
-        <Route path="/search-lite" element={<ResultsLitePage />} />
+        {/* results-lite 주소로 오면 ResultsLitePage */}
+        <Route path="/results-lite" element={<ResultsLitePage />} />
 
         {/* /detail 주소로 오면 DetailPage */}
         <Route path="/detail/:panel_id" element={<DetailPage />} />
