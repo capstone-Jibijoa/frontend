@@ -33,9 +33,8 @@ const ResultsPage = () => {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     
-    // URL에서 한 번만 읽기 (ref로 저장)
-    const queryRef = useRef(searchParams.get('q'));
-    const modelRef = useRef(searchParams.get('model') || 'pro');
+    const query = searchParams.get('q');
+    const model = searchParams.get('model') || 'pro';
     
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -44,26 +43,12 @@ const ResultsPage = () => {
     const [majorFields, setMajorFields] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     
-    // 한 번만 실행되도록
-    const hasFetched = useRef(false);
-
     useEffect(() => {
-        const query = queryRef.current;
-        const model = modelRef.current;
-        
-        console.log('=== Pro useEffect 실행 ===');
-        console.log('query:', query);
-        console.log('model:', model);
-        console.log('hasFetched:', hasFetched.current);
-        
         if (!query) {
             console.log('query 없음');
             setIsLoading(false);
-            return;
-        }
-        
-        if (hasFetched.current) {
-            console.log('이미 fetch 완료, 스킵');
+            setTableData([]);
+            setChartData([]);
             return;
         }
         
@@ -71,7 +56,6 @@ const ResultsPage = () => {
             console.log('Pro 모드 검색 시작');
             console.time("API 요청 + 데이터 처리");
             
-            hasFetched.current = true;
             setIsLoading(true);
             setError(null);
 
@@ -130,7 +114,6 @@ const ResultsPage = () => {
             } catch(e) {
                 console.error('에러:', e);
                 setError(e.message);
-                hasFetched.current = false;
             } finally {
                 setIsLoading(false);
                 setCurrentPage(1);
@@ -139,7 +122,7 @@ const ResultsPage = () => {
         };
 
         fetchData();
-    }, []);
+    }, [query, model]);
 
     const itemsPerPage = 10;
     const totalPages = Math.ceil(tableData.length / itemsPerPage);
@@ -151,7 +134,21 @@ const ResultsPage = () => {
         key !== 'panel_id' && !majorFields.includes(key)
     );
     const orderedHeaders = [...new Set([...majorFields, ...otherKeys])];
-    const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
+    const pagesPerBlock = 10; // 한 블록에 표시할 페이지 수
+    const currentBlock = Math.ceil(currentPage / pagesPerBlock); // 현재 페이지가 속한 블록
+    const startPage = (currentBlock - 1) * pagesPerBlock + 1;
+    const endPage = Math.min(startPage + pagesPerBlock - 1, totalPages);
+
+    // 화면에 보여줄 페이지 번호 배열
+    const pageNumbers = [];
+    if (totalPages > 0) {
+        for (let i = startPage; i <= endPage; i++) {
+            pageNumbers.push(i);
+        }
+    }
+
+    const prevBlockPage = startPage - pagesPerBlock;
+    const nextBlockPage = startPage + pagesPerBlock;
 
     const handleRowClick = (panel_id) => {
         navigate(`/detail/${panel_id}`);
@@ -161,8 +158,8 @@ const ResultsPage = () => {
         return (
             <ResultsPageContainer>
                 <SearchBar 
-                    defaultQuery={queryRef.current} 
-                    defaultModel={modelRef.current} 
+                    defaultQuery={query} 
+                    defaultModel={model} 
                 />
                 <LoadingIndicator
                     message="인사이트 도출중입니다. 잠시만 기다려주세요."
@@ -175,8 +172,8 @@ const ResultsPage = () => {
         return (
             <ResultsPageContainer>
                 <SearchBar 
-                    defaultQuery={queryRef.current} 
-                    defaultModel={modelRef.current} 
+                    defaultQuery={query} 
+                    defaultModel={model} 
                 />
                 <SectionTitle
                     style={{
@@ -185,7 +182,7 @@ const ResultsPage = () => {
                         color: '#6b7280'
                     }}
                 >
-                    '{queryRef.current}'에 대한 검색 결과가 없습니다.
+                    '{query}'에 대한 검색 결과가 없습니다.
                 </SectionTitle>
             </ResultsPageContainer>
         );
@@ -195,8 +192,8 @@ const ResultsPage = () => {
         return (
             <ResultsPageContainer>
                 <SearchBar 
-                    defaultQuery={queryRef.current} 
-                    defaultModel={modelRef.current} 
+                    defaultQuery={query} 
+                    defaultModel={model} 
                 />
                 <SectionTitle style={{ marginTop: '40px', color: 'red' }}>
                     데이터 로드 실패: {error}
@@ -208,8 +205,8 @@ const ResultsPage = () => {
     return (
         <ResultsPageContainer>
             <SearchBar 
-                defaultQuery={queryRef.current} 
-                defaultModel={modelRef.current} 
+                defaultQuery={query} 
+                defaultModel={model} 
             />
             <SummaryCard>
                 <ChartRow>
@@ -297,8 +294,8 @@ const ResultsPage = () => {
             
             <PaginationContainer>
                 <PageButton
-                    onClick={() => setCurrentPage(1)}
-                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage(prevBlockPage)}
+                    disabled={startPage === 1}
                 >
                     {'<<'}
                 </PageButton>
@@ -324,8 +321,8 @@ const ResultsPage = () => {
                     {'>'}
                 </PageButton>
                 <PageButton
-                    onClick={() => setCurrentPage(totalPages)}
-                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage(nextBlockPage)}
+                    disabled={endPage === totalPages}
                 >
                     {'>>'}
                 </PageButton>

@@ -20,34 +20,20 @@ const ResultsLitePage = () => {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     
-    const queryRef = useRef(searchParams.get('q'));
-    const modelRef = useRef(searchParams.get('model') || 'lite');
+    const query = searchParams.get('q');
+    const model = searchParams.get('model') || 'lite';
     
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     const [tableData, setTableData] = useState([]);
     const [majorFields, setMajorFields] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
-    
-    const hasFetched = useRef(false);
 
     useEffect(() => {
-        const query = queryRef.current;
-        const model = modelRef.current;
-        
-        console.log('=== Lite useEffect 실행 ===');
-        console.log('query:', query);
-        console.log('model:', model);
-        console.log('hasFetched:', hasFetched.current);
-        
         if (!query) {
             console.log('query 없음');
             setIsLoading(false);
-            return;
-        }
-        
-        if (hasFetched.current) {
-            console.log('이미 fetch 완료, 스킵');
+            setTableData([]);
             return;
         }
         
@@ -55,7 +41,6 @@ const ResultsLitePage = () => {
             console.log('Lite 모드 검색 시작');
             console.time("Lite 모드 검색");
             
-            hasFetched.current = true;
             setIsLoading(true);
             setError(null);
 
@@ -82,7 +67,7 @@ const ResultsLitePage = () => {
                 console.log('[디버깅] 백엔드에서 받은 실제 응답 객체:', data);
                 console.log('[디버깅] tableData 키 확인:', data.tableData);
                 // [디버깅 코드 끝]
-                console.log('✅ 응답 받음');
+                console.log('응답 받음');
                 
                 // 응답 구조 전체 출력
                 console.log('=== 응답 데이터 전체 (Lite) ===');
@@ -105,7 +90,6 @@ const ResultsLitePage = () => {
             } catch(e) {
                 console.error('Lite 모드 오류:', e);
                 setError(e.message);
-                hasFetched.current = false;
             } finally {
                 setIsLoading(false);
                 setCurrentPage(1);
@@ -114,18 +98,33 @@ const ResultsLitePage = () => {
         };
 
         fetchData();
-    }, []);
+    }, [query, model]);
 
     const itemsPerPage = 10;
     const totalPages = Math.ceil(tableData.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
     const currentTableData = tableData.slice(startIndex, startIndex + itemsPerPage);
+
     const allKeys = tableData.length > 0 ? Object.keys(tableData[0]) : [];
     const otherKeys = allKeys.filter(key => 
         key !== 'panel_id' && !majorFields.includes(key)
     );
     const orderedHeaders = [...new Set([...majorFields, ...otherKeys])];
-    const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
+    const pagesPerBlock = 10; // 한 블록에 표시할 페이지 수
+    const currentBlock = Math.ceil(currentPage / pagesPerBlock); // 현재 페이지가 속한 블록
+    const startPage = (currentBlock - 1) * pagesPerBlock + 1;
+    const endPage = Math.min(startPage + pagesPerBlock - 1, totalPages);
+
+    // 화면에 보여줄 페이지 번호 배열
+    const pageNumbers = [];
+    if (totalPages > 0) {
+        for (let i = startPage; i <= endPage; i++) {
+            pageNumbers.push(i);
+        }
+    }
+
+    const prevBlockPage = startPage - pagesPerBlock;
+    const nextBlockPage = startPage + pagesPerBlock;
 
     const handleRowClick = (panel_id) => {
         navigate(`/detail/${panel_id}`);
@@ -135,8 +134,8 @@ const ResultsLitePage = () => {
         return (
             <ResultsPageContainer>
                 <SearchBar 
-                    defaultQuery={queryRef.current} 
-                    defaultModel={modelRef.current} 
+                    defaultQuery={query} 
+                    defaultModel={model} 
                 />
                 <LoadingIndicator message="빠른 검색 중..." />
             </ResultsPageContainer>
@@ -147,8 +146,8 @@ const ResultsLitePage = () => {
         return (
             <ResultsPageContainer>
                 <SearchBar 
-                    defaultQuery={queryRef.current} 
-                    defaultModel={modelRef.current} 
+                    defaultQuery={query} 
+                    defaultModel={model} 
                 />
                 <SectionTitle
                     style={{
@@ -157,7 +156,7 @@ const ResultsLitePage = () => {
                         color: '#6b7280'
                     }}
                 >
-                    '{queryRef.current}'에 대한 검색 결과가 없습니다.
+                    '{query}'에 대한 검색 결과가 없습니다.
                     <br/><br/>
                     <span style={{ fontSize: '14px', color: '#999' }}>
                         (백엔드 응답은 받았지만 tableData가 비어있습니다. F12 콘솔을 확인하세요.)
@@ -171,8 +170,8 @@ const ResultsLitePage = () => {
         return (
             <ResultsPageContainer>
                 <SearchBar 
-                    defaultQuery={queryRef.current} 
-                    defaultModel={modelRef.current} 
+                    defaultQuery={query} 
+                    defaultModel={model} 
                 />
                 <SectionTitle style={{ marginTop: '40px', color: 'red' }}>
                     데이터 로드 실패: {error}
@@ -184,12 +183,12 @@ const ResultsLitePage = () => {
     return (
         <ResultsPageContainer>
             <SearchBar 
-                defaultQuery={queryRef.current} 
-                defaultModel={modelRef.current} 
+                defaultQuery={query} 
+                defaultModel={model}  
             />
             
-            <SectionTitle style={{ marginTop: '40px', fontSize: '18px', color: '#6b7280' }}>
-                총 {tableData.length}개 결과
+            <SectionTitle style={{ marginTop: '50px', fontSize: '20px', color: '#6b7280' }}>
+                총 {tableData.length}개의 검색 결과
             </SectionTitle>
             
             <TableCard>
@@ -252,8 +251,8 @@ const ResultsLitePage = () => {
             
             <PaginationContainer>
                 <PageButton
-                    onClick={() => setCurrentPage(1)}
-                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage(prevBlockPage)}
+                    disabled={startPage === 1}
                 >
                     {'<<'}
                 </PageButton>
@@ -279,8 +278,8 @@ const ResultsLitePage = () => {
                     {'>'}
                 </PageButton>
                 <PageButton
-                    onClick={() => setCurrentPage(totalPages)}
-                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage(nextBlockPage)}
+                    disabled={endPage === totalPages}
                 >
                     {'>>'}
                 </PageButton>
