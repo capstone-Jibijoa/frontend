@@ -20,34 +20,20 @@ const ResultsLitePage = () => {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     
-    const queryRef = useRef(searchParams.get('q'));
-    const modelRef = useRef(searchParams.get('model') || 'lite');
+    const query = searchParams.get('q');
+    const model = searchParams.get('model') || 'lite';
     
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     const [tableData, setTableData] = useState([]);
     const [majorFields, setMajorFields] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
-    
-    const hasFetched = useRef(false);
 
     useEffect(() => {
-        const query = queryRef.current;
-        const model = modelRef.current;
-        
-        console.log('=== Lite useEffect 실행 ===');
-        console.log('query:', query);
-        console.log('model:', model);
-        console.log('hasFetched:', hasFetched.current);
-        
         if (!query) {
             console.log('query 없음');
             setIsLoading(false);
-            return;
-        }
-        
-        if (hasFetched.current) {
-            console.log('이미 fetch 완료, 스킵');
+            setTableData([]);
             return;
         }
         
@@ -55,7 +41,6 @@ const ResultsLitePage = () => {
             console.log('Lite 모드 검색 시작');
             console.time("Lite 모드 검색");
             
-            hasFetched.current = true;
             setIsLoading(true);
             setError(null);
 
@@ -105,7 +90,6 @@ const ResultsLitePage = () => {
             } catch(e) {
                 console.error('Lite 모드 오류:', e);
                 setError(e.message);
-                hasFetched.current = false;
             } finally {
                 setIsLoading(false);
                 setCurrentPage(1);
@@ -114,7 +98,7 @@ const ResultsLitePage = () => {
         };
 
         fetchData();
-    }, []);
+    }, [query, model]);
 
     const itemsPerPage = 10;
     const totalPages = Math.ceil(tableData.length / itemsPerPage);
@@ -150,8 +134,8 @@ const ResultsLitePage = () => {
         return (
             <ResultsPageContainer>
                 <SearchBar 
-                    defaultQuery={queryRef.current} 
-                    defaultModel={modelRef.current} 
+                    defaultQuery={query} 
+                    defaultModel={model} 
                 />
                 <LoadingIndicator message="빠른 검색 중..." />
             </ResultsPageContainer>
@@ -162,8 +146,8 @@ const ResultsLitePage = () => {
         return (
             <ResultsPageContainer>
                 <SearchBar 
-                    defaultQuery={queryRef.current} 
-                    defaultModel={modelRef.current} 
+                    defaultQuery={query} 
+                    defaultModel={model} 
                 />
                 <SectionTitle
                     style={{
@@ -172,7 +156,7 @@ const ResultsLitePage = () => {
                         color: '#6b7280'
                     }}
                 >
-                    '{queryRef.current}'에 대한 검색 결과가 없습니다.
+                    '{query}'에 대한 검색 결과가 없습니다.
                     <br/><br/>
                     <span style={{ fontSize: '14px', color: '#999' }}>
                         (백엔드 응답은 받았지만 tableData가 비어있습니다. F12 콘솔을 확인하세요.)
@@ -186,8 +170,8 @@ const ResultsLitePage = () => {
         return (
             <ResultsPageContainer>
                 <SearchBar 
-                    defaultQuery={queryRef.current} 
-                    defaultModel={modelRef.current} 
+                    defaultQuery={query} 
+                    defaultModel={model} 
                 />
                 <SectionTitle style={{ marginTop: '40px', color: 'red' }}>
                     데이터 로드 실패: {error}
@@ -199,8 +183,8 @@ const ResultsLitePage = () => {
     return (
         <ResultsPageContainer>
             <SearchBar 
-                defaultQuery={queryRef.current} 
-                defaultModel={modelRef.current} 
+                defaultQuery={query} 
+                defaultModel={model}  
             />
             
             <SectionTitle style={{ marginTop: '50px', fontSize: '20px', color: '#6b7280' }}>
