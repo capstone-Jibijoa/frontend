@@ -4,7 +4,6 @@ import { Link } from "react-router-dom";
 // 페이지 전체 컨테이너
 export const PageContainer = styled.div`
     width: 100%;
-    max-width: 1440px;
     min-height: 100vh;
     margin: 0 auto;
     padding: 0px 80px 40px 80px;

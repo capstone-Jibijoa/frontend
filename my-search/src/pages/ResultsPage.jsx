@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import SearchBar from '../components/SearchBar';
 import CategoryPieChart from '../components/CategoryPieChart';
+import StackedBarChart from '../components/StackedBarChart';
 import LoadingIndicator from '../components/LoadingIndicator';
 import { KEY_TO_LABEL_MAP } from '../utils/constants';
 import { 
@@ -32,7 +33,7 @@ const ResultsPage = () => {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     
-    // ✅ URL에서 한 번만 읽기 (ref로 저장)
+    // URL에서 한 번만 읽기 (ref로 저장)
     const queryRef = useRef(searchParams.get('q'));
     const modelRef = useRef(searchParams.get('model') || 'pro');
     
@@ -43,7 +44,7 @@ const ResultsPage = () => {
     const [majorFields, setMajorFields] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     
-    // ✅ 한 번만 실행되도록
+    // 한 번만 실행되도록
     const hasFetched = useRef(false);
 
     useEffect(() => {
@@ -56,18 +57,18 @@ const ResultsPage = () => {
         console.log('hasFetched:', hasFetched.current);
         
         if (!query) {
-            console.log('⚠️ query 없음');
+            console.log('query 없음');
             setIsLoading(false);
             return;
         }
         
         if (hasFetched.current) {
-            console.log('✅ 이미 fetch 완료, 스킵');
+            console.log('이미 fetch 완료, 스킵');
             return;
         }
         
         const fetchData = async () => {
-            console.log('🔄 Pro 모드 검색 시작');
+            console.log('Pro 모드 검색 시작');
             console.time("API 요청 + 데이터 처리");
             
             hasFetched.current = true;
@@ -78,8 +79,8 @@ const ResultsPage = () => {
                 const url = 'http://localhost:8000/api/search-and-analyze';
                 const body = { query: query, model: model };
                 
-                console.log('📤 POST', url);
-                console.log('📤 Body:', JSON.stringify(body));
+                console.log('POST', url);
+                console.log('Body:', JSON.stringify(body));
                 
                 const searchResponse = await fetch(url, {
                     method: 'POST',
@@ -87,20 +88,35 @@ const ResultsPage = () => {
                     body: JSON.stringify(body)
                 });
 
-                console.log('📥 Status:', searchResponse.status);
+                console.log('Status:', searchResponse.status);
 
                 if (!searchResponse.ok) {
                     throw new Error(`HTTP error! status: ${searchResponse.status}`);
                 }
 
                 const data1 = await searchResponse.json();
-                console.log('✅ 응답 받음');
+                console.log('응답 받음');
                 
                 const report = data1.charts || [];
-                const transformedCharts = report.map(chart_raw => ({
-                    title: chart_raw?.topic,
-                    data: transformChartData(chart_raw?.chart_data[0]?.values) 
-                }));
+                const transformedCharts = report.map(chart_raw => {
+                    const chartType = chart_raw?.chart_type;
+                    const chartValues = chart_raw?.chart_data[0]?.values;
+
+                    if (chartType === 'crosstab') {
+                        return {
+                            title: chart_raw?.topic,
+                            chart_type: chartType,
+                            data: chartValues
+                        };
+                    } else {
+                        return {
+                            title: chart_raw?.topic,
+                            chart_type: chartType,
+                            data: transformChartData(chartValues)
+                        };
+                    }
+                });
+    
                 setChartData(transformedCharts);
                 
                 const fields = (data1.display_fields || []).map(item => item.field);
@@ -109,10 +125,10 @@ const ResultsPage = () => {
                 const fullTableData = data1.tableData || [];
                 setTableData(fullTableData);
                 
-                console.log(`✅ ${fullTableData.length}개 결과 로드 완료`);
+                console.log(`${fullTableData.length}개 결과 로드 완료`);
                 
             } catch(e) {
-                console.error('❌ 에러:', e);
+                console.error('에러:', e);
                 setError(e.message);
                 hasFetched.current = false;
             } finally {
@@ -123,7 +139,7 @@ const ResultsPage = () => {
         };
 
         fetchData();
-    }, []); // ✅ 빈 배열! 한 번만 실행
+    }, []);
 
     const itemsPerPage = 10;
     const totalPages = Math.ceil(tableData.length / itemsPerPage);
@@ -197,13 +213,27 @@ const ResultsPage = () => {
             />
             <SummaryCard>
                 <ChartRow>
-                    {chartData.map((chart, index) => (
-                        <CategoryPieChart
-                            key={index}
-                            title={chart.title}
-                            data={chart.data}
-                        />
-                    ))}
+                    {chartData.map((chart, index) => {
+                        const chartValues = chart.data;
+
+                        if (chart.chart_type === 'crosstab') {
+                            return (
+                                <StackedBarChart
+                                    key={index}
+                                    title={chart.title}
+                                    data={chart.data}
+                                />
+                            );
+                        } else {
+                            return (
+                                <CategoryPieChart
+                                    key={index}
+                                    title={chart.title}
+                                    data={chart.data}
+                                />
+                            );
+                        }
+                    })}
                 </ChartRow>
             </SummaryCard>
             

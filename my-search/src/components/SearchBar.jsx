@@ -63,6 +63,11 @@ const SearchInput = styled.input`
     font-size: 16px;
     text-align: left;
 
+    min-width: 0%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    
     &::placeholder {
         color: #999;
     }
