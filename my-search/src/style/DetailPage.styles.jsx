@@ -32,6 +32,9 @@ export const InfoGrid = styled.div`
 
 // '제목'과 '값'을 감싸는 하나의 셀
 export const InfoItem = styled.div`
+    display: flex;
+    flex-direction: column;
+
     border-bottom: 1px solid #e5e7eb;
     border-right: 1px solid #e5e7eb;
 
@@ -57,6 +60,7 @@ export const InfoKey = styled.div`
 
 // 항목의 값칸
 export const InfoValue = styled.div`
+    flex-grow: 1;
     padding: 16px;
     background-color: #ffffff; /* 흰색 배경 */
     font-size: 16px;

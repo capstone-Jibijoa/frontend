@@ -23,7 +23,7 @@ const LoadingContainer = styled.div`
     align-items: center;
     justify-content: center;
     gap: 24px;
-    margin-top: 100px;
+    margin-top: 60px;
 `;
 
 const LoadingText = styled.p`

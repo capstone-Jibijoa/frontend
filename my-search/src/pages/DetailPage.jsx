@@ -22,7 +22,6 @@ const DetailPage = () => {
             setError(null);
 
             try {
-                // AWS 서버 주소 변경해야함
                 const response = await fetch(`http://localhost:8000/api/panels/${panel_id}`); 
                 if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
