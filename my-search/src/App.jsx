@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import MainPage from './pages/MainPage';
 import ResultsPage from './pages/ResultsPage';
+import ResultsLitePage from './pages/ResultsLitePage';
 import DetailPage from './pages/DetailPage';
 
 function App() {
@@ -13,6 +14,9 @@ function App() {
 
         {/* /search 주소로 오면 ResultsPage */}
         <Route path="/search" element={<ResultsPage />} />
+
+        {/* search-lite 주소로 오면 ResultsLitePage */}
+        <Route path="/search-lite" element={<ResultsLitePage />} />
 
         {/* /detail 주소로 오면 DetailPage */}
         <Route path="/detail/:panel_id" element={<DetailPage />} />

@@ -2,7 +2,7 @@ import React from 'react';
 import styled from 'styled-components';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
-// 차트 하나하나를 감싸는 박스
+// 차트를 감싸는 박스
 const ChartBox = styled.div`
     flex: 1;
     border: 1px solid #e5e7eb;
@@ -24,9 +24,9 @@ const ChartTitle = styled.h3`
 `;
 
 // 차트에 사용할 색상
-const COLORS = ['#D64392', '#8A4AD6', '#4171D6',  '#2F9CA9', '#289C5E', '#C7952C', '#D9534F'];
+const COLORS = ['#D64392', '#8A4AD6', '#4171D6',  '#2F9CA9', '#289C5E', '#C7952C', '#D9534F', '#F57C00', '#FBC02D', '#8BC34A', '#03A9F4'];
 
-// 차트에 퍼센트(%) 라벨을 예쁘게 표시하기 위한 헬퍼 함수
+// 차트에 퍼센트(%) 표시하기 위한 헬퍼 함수
 const RADIAN = Math.PI / 180;
 const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
     if (percent < 0.1) {
@@ -59,7 +59,7 @@ const CategoryPieChart = ({ title, data }) => {
     return (
         <ChartBox>
         <ChartTitle>{title}</ChartTitle>
-        {/* ResponsiveContainer로 인해 차트가 부모(ChartBox) 크기에 맞춰 반응형으로 작동 */}
+        {/* 차트가 부모(ChartBox) 크기에 맞춰 반응형으로 작동 */}
         <ResponsiveContainer width="100%" height={300}> 
             <PieChart>
             <Pie
