@@ -9,8 +9,10 @@ const ChartBox = styled.div`
     border-radius: 8px;
     padding: 16px;
     background-color: #ffffff;
-    min-width: 200px; /* 차트의 최소 너비 설정 */
-    min-height: 350px; /* 차트 박스의 최소 높이 설정 */
+    min-width: 150px; 
+    min-height: 400px; 
+    display: flex;
+    flex-direction: column;
 `;
 
 // 차트 제목
@@ -21,7 +23,17 @@ const ChartTitle = styled.h3`
     margin-top: 0;
     margin-bottom: 16px;
     text-align: center;
+    flex-shrink: 0;
 `;
+
+// 데이터가 없을 때 보여줄 메시지
+const NoDataMessage = styled.div`
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #9ca3af;
+`
 
 // 차트에 사용할 색상
 const COLORS = ['#D64392', '#8A4AD6', '#4171D6',  '#2F9CA9', '#289C5E', '#C7952C', '#D9534F', '#F57C00', '#FBC02D', '#8BC34A', '#03A9F4'];
@@ -46,7 +58,7 @@ const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, per
 
 // 항목 길이가 너무 길면 '...'으로 줄이는 함수
 const renderLegendText = (value) => {
-    const maxLength = 15;
+    const maxLength = 6;
     if (value.length > maxLength) {
         return `${value.substring(0, maxLength)}...`;
     }
@@ -56,30 +68,36 @@ const renderLegendText = (value) => {
 
 // 'title', 'data'을 props로 받는 컴포넌트
 const CategoryPieChart = ({ title, data }) => {
+    const hasData = data && data.length > 0;
+
     return (
         <ChartBox>
-        <ChartTitle>{title}</ChartTitle>
-        {/* 차트가 부모(ChartBox) 크기에 맞춰 반응형으로 작동 */}
-        <ResponsiveContainer width="100%" height={300}> 
-            <PieChart>
-            <Pie
-                data={data}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={renderCustomizedLabel} // 위에서 만든 퍼센트 라벨 함수 적용
-                outerRadius={100}
-                fill="#8884d8"
-                dataKey="value" // 'value' 키에 있는 숫자를 기준으로 차트를 그림
-            >
-                {data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-            </Pie>
-            <Tooltip formatter={(value) => `${value}%`} /> {/* 마우스를 올렸을 때 정보 표시 */}
-            <Legend formatter={renderLegendText} /> {/* 차트 하단의 범례 표시 */}
-            </PieChart>
-        </ResponsiveContainer>
+            <ChartTitle>{title}</ChartTitle>
+            {/* 차트가 부모(ChartBox) 크기에 맞춰 반응형으로 작동 */}
+            {!hasData ? (
+                <NoDataMessage>일치하는 데이터가 없습니다.</NoDataMessage>
+            ) : (
+                <ResponsiveContainer width="100%" height={400}> 
+                <PieChart>
+                <Pie
+                    data={data}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={renderCustomizedLabel} // 위에서 만든 퍼센트 라벨 함수 적용
+                    outerRadius={100}
+                    fill="#8884d8"
+                    dataKey="value" // 'value' 키에 있는 숫자를 기준으로 차트를 그림
+                >
+                    {data.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                </Pie>
+                <Tooltip formatter={(value) => `${value}%`} /> {/* 마우스를 올렸을 때 정보 표시 */}
+                <Legend formatter={renderLegendText} /> {/* 차트 하단의 범례 표시 */}
+                </PieChart>
+            </ResponsiveContainer>
+            )}
         </ChartBox>
     );
 };
