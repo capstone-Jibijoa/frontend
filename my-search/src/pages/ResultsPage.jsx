@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
-import SearchBar from '../components/SearchBar'; // 메인페이지 검색창 재사용
-import CategoryPieChart from '../components/CategoryPieChart'; // 차트 컴포넌트 재사용
+import SearchBar from '../components/SearchBar';
+import CategoryPieChart from '../components/CategoryPieChart';
 import LoadingIndicator from '../components/LoadingIndicator';
-import { KEY_TO_LABEL_MAP } from '../utils/constants'; // 사전
+import { KEY_TO_LABEL_MAP } from '../utils/constants';
 import { 
     ResultsPageContainer, 
     SummaryCard, 
@@ -20,10 +20,8 @@ import {
     PageButton    
 } from '../style/ResultPage.styles';
 
-// 백엔드 데이터를 차트 형식으로 변환
 const transformChartData = (chartValuesObject) => {
     if (!chartValuesObject) return [];
-
     return Object.entries(chartValuesObject).map(([name, value]) => ({
         name: name,
         value: value
@@ -33,42 +31,71 @@ const transformChartData = (chartValuesObject) => {
 const ResultsPage = () => {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
-    const query = searchParams.get('q');
-    const model = searchParams.get('model') || 'pro';
-    // 로딩 상태를 저장
+    
+    // ✅ URL에서 한 번만 읽기 (ref로 저장)
+    const queryRef = useRef(searchParams.get('q'));
+    const modelRef = useRef(searchParams.get('model') || 'pro');
+    
     const [isLoading, setIsLoading] = useState(true);
-    // 에러 상태를 저장
     const [error, setError] = useState(null);
-    // 백엔드에서 받아온 데이터를 저장
     const [chartData, setChartData] = useState([]);
     const [tableData, setTableData] = useState([]);
-    // 주요 필드를 저장할 state
     const [majorFields, setMajorFields] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
+    
+    // ✅ 한 번만 실행되도록
+    const hasFetched = useRef(false);
 
-    useEffect(() => { // 검색어가 없으면 요청하지 않음
+    useEffect(() => {
+        const query = queryRef.current;
+        const model = modelRef.current;
+        
+        console.log('=== Pro useEffect 실행 ===');
+        console.log('query:', query);
+        console.log('model:', model);
+        console.log('hasFetched:', hasFetched.current);
+        
         if (!query) {
+            console.log('⚠️ query 없음');
             setIsLoading(false);
             return;
         }
         
+        if (hasFetched.current) {
+            console.log('✅ 이미 fetch 완료, 스킵');
+            return;
+        }
+        
         const fetchData = async () => {
+            console.log('🔄 Pro 모드 검색 시작');
             console.time("API 요청 + 데이터 처리");
-            setIsLoading(true); // 로딩 시작
-            setError(null);     // 이전 에러 초기화
+            
+            hasFetched.current = true;
+            setIsLoading(true);
+            setError(null);
 
             try {
-                const searchResponse = await fetch(`http://localhost:8000/api/search-and-analyze`, {
+                const url = 'http://localhost:8000/api/search-and-analyze';
+                const body = { query: query, model: model };
+                
+                console.log('📤 POST', url);
+                console.log('📤 Body:', JSON.stringify(body));
+                
+                const searchResponse = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ query: query, model: model })
+                    body: JSON.stringify(body)
                 });
+
+                console.log('📥 Status:', searchResponse.status);
 
                 if (!searchResponse.ok) {
                     throw new Error(`HTTP error! status: ${searchResponse.status}`);
                 }
 
                 const data1 = await searchResponse.json();
+                console.log('✅ 응답 받음');
+                
                 const report = data1.charts || [];
                 const transformedCharts = report.map(chart_raw => ({
                     title: chart_raw?.topic,
@@ -76,44 +103,34 @@ const ResultsPage = () => {
                 }));
                 setChartData(transformedCharts);
                 
-                // 주요 필드와 panel_id 저장
                 const fields = (data1.display_fields || []).map(item => item.field);
                 setMajorFields(fields);
 
                 const fullTableData = data1.tableData || [];
-
-                console.log("--- 디버깅 ---");
-                console.log("LLM이 정한 주요 필드 (majorFields):", fields);
-                if (fullTableData.length > 0) {
-                    console.log("DB에서 실제 받은 패널 데이터 (tableData[0]):", fullTableData[0]);
-                    console.log("DB 데이터의 모든 Key 목록:", Object.keys(fullTableData[0]));
-                }
-                console.log("--------------");
-                // 최종 데이터 저장
-
                 setTableData(fullTableData);
+                
+                console.log(`✅ ${fullTableData.length}개 결과 로드 완료`);
+                
             } catch(e) {
+                console.error('❌ 에러:', e);
                 setError(e.message);
+                hasFetched.current = false;
             } finally {
-
-                setIsLoading(false); // 로딩 끝
-                setCurrentPage(1); // 1페이지로 리셋
-
+                setIsLoading(false);
+                setCurrentPage(1);
                 console.timeEnd("API 요청 + 데이터 처리");
             }
         };
 
         fetchData();
-    }, [query, model]);
+    }, []); // ✅ 빈 배열! 한 번만 실행
 
     const itemsPerPage = 10;
-    // 총 아이템을 5로 나눈 값을 올림
     const totalPages = Math.ceil(tableData.length / itemsPerPage);
-    const startIndex = (currentPage - 1) * itemsPerPage; // 시작 인덱스
+    const startIndex = (currentPage - 1) * itemsPerPage;
     const currentTableData = tableData.slice(startIndex, startIndex + itemsPerPage);
-    // 모든 키
+    
     const allKeys = tableData.length > 0 ? Object.keys(tableData[0]) : [];
-    // 기타 키
     const otherKeys = allKeys.filter(key => 
         key !== 'panel_id' && !majorFields.includes(key)
     );
@@ -122,52 +139,62 @@ const ResultsPage = () => {
 
     const handleRowClick = (panel_id) => {
         navigate(`/detail/${panel_id}`);
-    }
+    };
+
     if (isLoading) {
         return (
-        <ResultsPageContainer>
-            <SearchBar defaultQuery={query} defaultModel={model} />
-            <LoadingIndicator
-                message={
-                    model === 'pro'
-                    ? '인사이트 도출중입니다. 잠시만 기다려주세요.'
-                    : '검색 결과를 불러오는 중...'
-                }
-            />
-        </ResultsPageContainer>
+            <ResultsPageContainer>
+                <SearchBar 
+                    defaultQuery={queryRef.current} 
+                    defaultModel={modelRef.current} 
+                />
+                <LoadingIndicator
+                    message="인사이트 도출중입니다. 잠시만 기다려주세요."
+                />
+            </ResultsPageContainer>
         );
     }
 
-    if (tableData.length ===0) {
+    if (tableData.length === 0 && !error) {
         return (
             <ResultsPageContainer>
-            <SearchBar defaultQuery={query} defaultModel={model} />
-            <SectionTitle
-                style={{
-                    marginTop: '60px',
-                    textAlign: 'center',
-                    color: '#6b7280'
-                }}
-            >
-                '{query}'에 대한 검색 결과가 없습니다.
-            </SectionTitle>
-        </ResultsPageContainer>
-        )
+                <SearchBar 
+                    defaultQuery={queryRef.current} 
+                    defaultModel={modelRef.current} 
+                />
+                <SectionTitle
+                    style={{
+                        marginTop: '60px',
+                        textAlign: 'center',
+                        color: '#6b7280'
+                    }}
+                >
+                    '{queryRef.current}'에 대한 검색 결과가 없습니다.
+                </SectionTitle>
+            </ResultsPageContainer>
+        );
     }
 
     if (error) {
-    return (
-        <ResultsPageContainer>
-            <SearchBar defaultQuery={query} defaultModel={model} />
-            <SectionTitle style={{ marginTop: '40px', color: 'red' }}>
-            데이터 로드 실패: {error}
-            </SectionTitle>
-        </ResultsPageContainer>
+        return (
+            <ResultsPageContainer>
+                <SearchBar 
+                    defaultQuery={queryRef.current} 
+                    defaultModel={modelRef.current} 
+                />
+                <SectionTitle style={{ marginTop: '40px', color: 'red' }}>
+                    데이터 로드 실패: {error}
+                </SectionTitle>
+            </ResultsPageContainer>
         );
     }
+
     return (
         <ResultsPageContainer>
-            <SearchBar defaultQuery={query} defaultModel={model} />
+            <SearchBar 
+                defaultQuery={queryRef.current} 
+                defaultModel={modelRef.current} 
+            />
             <SummaryCard>
                 <ChartRow>
                     {chartData.map((chart, index) => (
@@ -187,66 +214,70 @@ const ResultsPage = () => {
                         <tr>
                             <th>목록번호</th>
                             {orderedHeaders
-                            .filter(key => key !== 'panel_id')
-                            .slice(0, 4)
-                            .map((key) => (
-                                <th key={key}>
-                                    {KEY_TO_LABEL_MAP[key] || key}
-                                </th>
-                            ))}
+                                .filter(key => key !== 'panel_id')
+                                .slice(0, 4)
+                                .map((key) => (
+                                    <th key={key}>
+                                        {KEY_TO_LABEL_MAP[key] || key}
+                                    </th>
+                                ))}
                         </tr>
                     </TableHead>
                     <TableBody>
-                        {/* tableData를 map으로 돌려 행을 만듦*/}
                         {currentTableData.map((row, index) => (
-                        <tr 
-                            key={row.panel_id || index}
-                            onClick={() => handleRowClick(row.panel_id)}
-                            style={{ cursor: 'pointer' }}
-                        >
-                            <td>
-                                <StyledLink to={`/detail/${row.panel_id}`}>
-                                    {startIndex + index + 1}
-                                </StyledLink>
-                            </td>
+                            <tr 
+                                key={row.panel_id || index}
+                                onClick={() => handleRowClick(row.panel_id)}
+                                style={{ cursor: 'pointer' }}
+                            >
+                                <td>
+                                    <StyledLink to={`/detail/${row.panel_id}`}>
+                                        {startIndex + index + 1}
+                                    </StyledLink>
+                                </td>
 
-                            {orderedHeaders.filter(key => key !== 'panel_id')
-                            .slice(0, 4)
-                            .map((key) => {
-                                const value = row[key];
-                                let displayValue;
-                                
-                                if (value == null || value === '') {
-                                    displayValue = '미응답';
-                                } else if (typeof value === 'object') {
-                                    displayValue = '[데이터]';
-                                } else {
-                                    displayValue = String(value);
-                                }
+                                {orderedHeaders
+                                    .filter(key => key !== 'panel_id')
+                                    .slice(0, 4)
+                                    .map((key) => {
+                                        const value = row[key];
+                                        let displayValue;
+                                        
+                                        if (value == null || value === '') {
+                                            displayValue = '미응답';
+                                        } else if (Array.isArray(value)) {
+                                            displayValue = value.length > 0 ? value.join(', ') : '미응답';
+                                        } else if (typeof value === 'object') {
+                                            displayValue = '[데이터]';
+                                        } else {
+                                            displayValue = String(value);
+                                        }
 
-                                return (
-                                    <td key={key}>
-                                        {displayValue}
-                                    </td>
-                                );
-                            })}
-                        </tr>
+                                        return (
+                                            <td key={key}>
+                                                {displayValue}
+                                            </td>
+                                        );
+                                    })}
+                            </tr>
                         ))}
                     </TableBody>
                 </StyledTable>
             </TableCard>
+            
             <PaginationContainer>
                 <PageButton
                     onClick={() => setCurrentPage(1)}
-                    disabled={currentPage ===1}
+                    disabled={currentPage === 1}
                 >
                     {'<<'}
                 </PageButton>
                 <PageButton 
                     disabled={currentPage === 1} 
-                    onClick={() => setCurrentPage(currentPage - 1)}>{'<'}
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                >
+                    {'<'}
                 </PageButton>
-                {/* map을 통해 페이지 번호 동적 생성*/}
                 {pageNumbers.map((pageNumber) => (
                     <PageButton
                         key={pageNumber}
@@ -270,7 +301,7 @@ const ResultsPage = () => {
                 </PageButton>
             </PaginationContainer>
         </ResultsPageContainer>
-    ); 
+    );
 };
 
 export default ResultsPage;

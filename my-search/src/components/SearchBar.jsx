@@ -123,7 +123,7 @@ const SearchBar = ({ defaultQuery = '', defaultModel = 'lite', marginTop }) => {
         }
     };
 
-    // 검색 실행(Enter 또는 클릭)
+    // ✅ 검색 실행(Enter 또는 클릭) - 수정됨
     const handleSearch = () => {
         const searchQuery = query.trim();
         
@@ -131,10 +131,11 @@ const SearchBar = ({ defaultQuery = '', defaultModel = 'lite', marginTop }) => {
             return;
         }
         
+        // ✅ 라우팅 경로 수정
         if (model === 'lite') {
-            navigate(`/search-lite?model=lite&q=${searchQuery}`);
+            navigate(`/results-lite?q=${encodeURIComponent(searchQuery)}&model=lite`);
         } else {
-            navigate(`/search?model=pro&q=${searchQuery}`);
+            navigate(`/results?q=${encodeURIComponent(searchQuery)}&model=pro`);
         }
     };
 
