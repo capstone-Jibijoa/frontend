@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { useParams, useNavigate } from 'react-router-dom';
 import SearchBar from '../components/SearchBar';
 import LoadingIndicator from '../components/LoadingIndicator';
-import { getFieldLabel } from '../utils/constants'; // ✅ 통합 라벨 함수 사용
+import { getFieldLabel } from '../utils/constants';
 import { 
     PageContainer, 
     DetailCard, 
@@ -35,13 +35,6 @@ const DetailPage = () => {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 const data = await response.json();
-                
-                console.log('📦 받은 데이터:', data);
-                console.log('📊 데이터 키 목록:', Object.keys(data));
-                
-                // QPoll 데이터 개수 확인
-                const qpollKeys = Object.keys(data).filter(k => k.startsWith('qpoll_'));
-                console.log(`✅ QPoll 필드 ${qpollKeys.length}개 발견`);
                 
                 // 백엔드에서 데이터 주는 방식 확인
                 setDetailData(data.detail || data || {});
@@ -84,7 +77,7 @@ const DetailPage = () => {
                 <InfoGrid>
                     {Object.entries(detailData)
                         .filter(([key]) => {
-                            // ✅ 제외할 필드
+                            // 제외할 필드
                             const excludeFields = [
                                 'panel_id',
                                 'subjective_vector',  // 벡터 데이터
@@ -93,7 +86,7 @@ const DetailPage = () => {
                             return !excludeFields.includes(key);
                         })
                         .map(([key, value]) => {
-                            // ✅ 통합 라벨 함수 사용 (Welcome + QPoll)
+                            // 통합 라벨 함수 사용 (Welcome + QPoll)
                             const label = getFieldLabel(key);
 
                             if (!label) {

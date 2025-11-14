@@ -12,6 +12,8 @@ import {
     Cell
 } from 'recharts';
 
+const BAR_COUNT = 8;
+
 // 차트를 감싸는 박스
 const ChartBox = styled.div`
     flex: 1;
@@ -19,8 +21,8 @@ const ChartBox = styled.div`
     border-radius: 8px;
     padding: 16px;
     background-color: #ffffff;
-    min-width: 200px; /* 차트의 최소 너비 설정 */
-    min-height: 350px; /* 차트 박스의 최소 높이 설정 */
+    min-width: 150px; /* 차트의 최소 너비 설정 */
+    min-height: 400px; /* 차트 박스의 최소 높이 설정 */
 `;
 
 // 차트 제목
@@ -52,19 +54,26 @@ const StackedBarChart = ({ title, data }) => {
     if (!chartData.length) {
         return <ChartBox><ChartTitle>{title}</ChartTitle>데이터 없음</ChartBox>;
     }
-
+    const dynamicBarSize = chartData.length < BAR_COUNT ? 30 : undefined;
+    
     return (
         <ChartBox>
             <ChartTitle>{title}</ChartTitle>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={400}>
                 <BarChart
                     data={chartData}
                     layout="vertical"
-                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                    margin={{ top: 5, right: 30, left: 0, bottom: 5 }}
                 >
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis type="number" domain={[0, 100]} unit="%" />
-                    <YAxis dataKey="name" type="category" width={80} />
+                    <XAxis 
+                        type="number"
+                        domain={[0, 100]}
+                        unit="%"
+                        ticks={[0, 50, 100]}
+                        interval={0}
+                    />
+                    <YAxis dataKey="name" type="category" />
                     <Tooltip formatter={(value) => `${value}%`} />
                     <Legend />
 
@@ -74,6 +83,7 @@ const StackedBarChart = ({ title, data }) => {
                             dataKey={key}
                             stackId="a" // 모든 Bar를 하나의 스택으로 묶음
                             fill={COLORS[index % COLORS.length]}
+                            barSize={dynamicBarSize}
                         />
                 ))}
                 </BarChart>

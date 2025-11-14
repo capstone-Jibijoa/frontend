@@ -82,7 +82,7 @@ const ResultsLitePage = () => {
                 console.log('[디버깅] 백엔드에서 받은 실제 응답 객체:', data);
                 console.log('[디버깅] tableData 키 확인:', data.tableData);
                 // [디버깅 코드 끝]
-                console.log('✅ 응답 받음');
+                console.log('응답 받음');
                 
                 // 응답 구조 전체 출력
                 console.log('=== 응답 데이터 전체 (Lite) ===');

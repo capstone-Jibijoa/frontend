@@ -87,12 +87,13 @@ const SearchIcon = styled.div`
 
 const getPlaceholderText = (currentModel) => {
         if (currentModel === 'lite') {
+            // 'lite'일 때
             return "2.5 Pro에서 인사이트를 검색해보세요.";
         }
         // 'pro'일 때
         return "검색어를 입력하세요."; 
 };
-// 'defaultQuery'라는 props를 받도록 설정합니다.
+
 const SearchBar = ({ defaultQuery = '', defaultModel = 'lite', marginTop }) => {
     // 검색어를 저장할 state(초기값은 props로 받은 defaultQuery)
     const [query, setQuery] = useState(defaultQuery);
@@ -128,7 +129,6 @@ const SearchBar = ({ defaultQuery = '', defaultModel = 'lite', marginTop }) => {
         }
     };
 
-    // ✅ 검색 실행(Enter 또는 클릭) - 수정됨
     const handleSearch = () => {
         const searchQuery = query.trim();
         
@@ -136,7 +136,6 @@ const SearchBar = ({ defaultQuery = '', defaultModel = 'lite', marginTop }) => {
             return;
         }
         
-        // ✅ 라우팅 경로 수정
         if (model === 'lite') {
             navigate(`/results-lite?q=${encodeURIComponent(searchQuery)}&model=lite`);
         } else {
