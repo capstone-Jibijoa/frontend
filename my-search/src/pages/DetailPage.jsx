@@ -3,8 +3,16 @@ import styled from 'styled-components';
 import { useParams, useNavigate } from 'react-router-dom';
 import SearchBar from '../components/SearchBar';
 import LoadingIndicator from '../components/LoadingIndicator';
-import { KEY_TO_LABEL_MAP } from '../utils/constants'; // 사전
-import { PageContainer, DetailCard, InfoGrid, InfoItem, InfoKey, InfoValue, BackButton } from '../style/DetailPage.styles';
+import { getFieldLabel } from '../utils/constants'; // ✅ 통합 라벨 함수 사용
+import { 
+    PageContainer, 
+    DetailCard, 
+    InfoGrid, 
+    InfoItem, 
+    InfoKey, 
+    InfoValue, 
+    BackButton 
+} from '../style/DetailPage.styles';
 
 // DetailPage 컴포넌트
 const DetailPage = () => {
@@ -24,9 +32,16 @@ const DetailPage = () => {
             try {
                 const response = await fetch(`http://localhost:8000/api/panels/${panel_id}`); 
                 if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 const data = await response.json();
+                
+                console.log('📦 받은 데이터:', data);
+                console.log('📊 데이터 키 목록:', Object.keys(data));
+                
+                // QPoll 데이터 개수 확인
+                const qpollKeys = Object.keys(data).filter(k => k.startsWith('qpoll_'));
+                console.log(`✅ QPoll 필드 ${qpollKeys.length}개 발견`);
                 
                 // 백엔드에서 데이터 주는 방식 확인
                 setDetailData(data.detail || data || {});
@@ -56,7 +71,7 @@ const DetailPage = () => {
             <PageContainer>
                 <SearchBar width="100%" maxWidth="100%" />
                 <h2 style={{ marginTop: '40px', color: 'red' }}>
-                데이터 로드 실패: {error}
+                    데이터 로드 실패: {error}
                 </h2>
             </PageContainer>
         );
@@ -67,27 +82,49 @@ const DetailPage = () => {
             <SearchBar />
             <DetailCard>
                 <InfoGrid>
-                    {Object.entries(detailData).map(([key, value]) => {
-                        // 사전에서 한글 제목 찾기
-                        const label = KEY_TO_LABEL_MAP[key];
+                    {Object.entries(detailData)
+                        .filter(([key]) => {
+                            // ✅ 제외할 필드
+                            const excludeFields = [
+                                'panel_id',
+                                'subjective_vector',  // 벡터 데이터
+                                'qpoll_조회_오류'     // 에러 메시지 (필요시 표시)
+                            ];
+                            return !excludeFields.includes(key);
+                        })
+                        .map(([key, value]) => {
+                            // ✅ 통합 라벨 함수 사용 (Welcome + QPoll)
+                            const label = getFieldLabel(key);
 
-                        if (key === 'panel_id' || !label) {
-                            return null;
-                        }
+                            if (!label) {
+                                // 라벨이 없는 키는 표시 안 함
+                                return null;
+                            }
 
-                        // 사전에 있는 키만 그리드로 만든다.
-                        return (
-                            <InfoItem key={key}>
-                                <InfoKey>{label}</InfoKey>
-                                <InfoValue>{(value == null || value === '') ? '미응답' : String(value)}</InfoValue>
-                            </InfoItem>
-                        );
-                    })}
+                            // 값 처리
+                            let displayValue;
+                            
+                            if (value == null || value === '') {
+                                displayValue = '미응답';
+                            } else if (typeof value === 'object') {
+                                // 객체/배열은 JSON 문자열로
+                                displayValue = JSON.stringify(value);
+                            } else {
+                                displayValue = String(value);
+                            }
+
+                            return (
+                                <InfoItem key={key}>
+                                    <InfoKey>{label}</InfoKey>
+                                    <InfoValue>{displayValue}</InfoValue>
+                                </InfoItem>
+                            );
+                        })}
                 </InfoGrid>
             </DetailCard>
             <BackButton onClick={() => navigate(-1)}>돌아가기</BackButton>
         </PageContainer>
-    )
+    );
 };
 
 export default DetailPage;

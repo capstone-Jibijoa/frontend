@@ -211,8 +211,12 @@ const ResultsPage = () => {
                                 const value = row[key];
                                 let displayValue;
                                 
+                                // ✅ 배열 처리 추가
                                 if (value == null || value === '') {
                                     displayValue = '미응답';
+                                } else if (Array.isArray(value)) {
+                                    // ✅ 배열이면 쉼표로 연결
+                                    displayValue = value.length > 0 ? value.join(', ') : '미응답';
                                 } else if (typeof value === 'object') {
                                     displayValue = '[데이터]';
                                 } else {
