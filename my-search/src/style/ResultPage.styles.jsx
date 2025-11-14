@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 
 // 페이지 전체를 감싸는 컨테이너
 export const ResultsPageContainer = styled.div`
-    max-width: 1440px;
     width: 100%;
     min-height: 100vh;
     margin: 0 auto;

@@ -41,18 +41,18 @@ const ResultsLitePage = () => {
         console.log('hasFetched:', hasFetched.current);
         
         if (!query) {
-            console.log('⚠️ query 없음');
+            console.log('query 없음');
             setIsLoading(false);
             return;
         }
         
         if (hasFetched.current) {
-            console.log('✅ 이미 fetch 완료, 스킵');
+            console.log('이미 fetch 완료, 스킵');
             return;
         }
         
         const fetchData = async () => {
-            console.log('🔄 Lite 모드 검색 시작');
+            console.log('Lite 모드 검색 시작');
             console.time("Lite 모드 검색");
             
             hasFetched.current = true;
@@ -63,7 +63,7 @@ const ResultsLitePage = () => {
                 const url = 'http://localhost:8000/api/search';
                 const body = { query: query };
                 
-                console.log('📤 POST', url);
+                console.log('POST', url);
                 
                 const searchResponse = await fetch(url, {
                     method: 'POST',
@@ -71,36 +71,39 @@ const ResultsLitePage = () => {
                     body: JSON.stringify(body)
                 });
 
-                console.log('📥 Status:', searchResponse.status);
+                console.log('Status:', searchResponse.status);
 
                 if (!searchResponse.ok) {
                     throw new Error(`HTTP error! status: ${searchResponse.status}`);
                 }
 
                 const data = await searchResponse.json();
+                // [디버깅 코드]
+                console.log('[디버깅] 백엔드에서 받은 실제 응답 객체:', data);
+                console.log('[디버깅] tableData 키 확인:', data.tableData);
+                // [디버깅 코드 끝]
                 console.log('✅ 응답 받음');
                 
-                // ✅ 응답 구조 전체 출력
-                console.log('📦 === 응답 데이터 전체 (Lite) ===');
+                // 응답 구조 전체 출력
+                console.log('=== 응답 데이터 전체 (Lite) ===');
                 // console.log(JSON.stringify(data, null, 2)); // 디버깅 시 너무 길어질 수 있으므로 주석 처리
                 
-                // ✅ 데이터 설정
-                // ⭐️ [수정] display_fields 구조에 맞게 field 이름만 추출
+                // 데이터 설정
                 const fields = (data.display_fields || []).map(item => {
                     // item이 객체인 경우 item.field를 사용하고, 아니면 item 자체를 사용 (안전성 보강)
                     return item.field || item;
                 });
-                console.log('✅ 추출된 필드:', fields);
+                console.log('추출된 필드:', fields);
                 setMajorFields(fields);
                 
                 const fullTableData = data.tableData || [];
-                console.log('✅ 설정할 테이블 데이터 길이:', fullTableData.length);
+                console.log('설정할 테이블 데이터 길이:', fullTableData.length);
                 setTableData(fullTableData);
                 
-                console.log(`✅ ${fullTableData.length}개 결과 로드 완료`);
+                console.log(`${fullTableData.length}개 결과 로드 완료`);
                 
             } catch(e) {
-                console.error('❌ Lite 모드 오류:', e);
+                console.error('Lite 모드 오류:', e);
                 setError(e.message);
                 hasFetched.current = false;
             } finally {
@@ -117,8 +120,6 @@ const ResultsLitePage = () => {
     const totalPages = Math.ceil(tableData.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
     const currentTableData = tableData.slice(startIndex, startIndex + itemsPerPage);
-    
-    // ⭐️ [수정] orderedHeaders 생성 로직 유지 (tableData의 키를 기준으로 순서 결정)
     const allKeys = tableData.length > 0 ? Object.keys(tableData[0]) : [];
     const otherKeys = allKeys.filter(key => 
         key !== 'panel_id' && !majorFields.includes(key)
@@ -188,7 +189,7 @@ const ResultsLitePage = () => {
             />
             
             <SectionTitle style={{ marginTop: '40px', fontSize: '18px', color: '#6b7280' }}>
-                🚀 Lite 모드 - 총 {tableData.length}개 결과
+                총 {tableData.length}개 결과
             </SectionTitle>
             
             <TableCard>
