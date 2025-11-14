@@ -13,7 +13,7 @@ const MainPage = () => {
                 <br />
                 For Insight
             </Headline>
-            <SearchBar marginTop="70px" />
+            <SearchBar marginTop="95px" />
             <Footer />
         </PageWrapper>
     );

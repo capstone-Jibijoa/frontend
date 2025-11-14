@@ -2,15 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import SearchBar from '../components/SearchBar';
-import CategoryPieChart from '../components/CategoryPieChart';
 import LoadingIndicator from '../components/LoadingIndicator';
 import { KEY_TO_LABEL_MAP } from '../utils/constants';
 import { 
     ResultsPageContainer, 
-    SummaryCard, 
     SectionTitle, 
-    ChartTitle, 
-    ChartRow, 
     TableCard, 
     StyledTable, 
     TableHead, 
@@ -20,37 +16,26 @@ import {
     PageButton    
 } from '../style/ResultPage.styles';
 
-const transformChartData = (chartValuesObject) => {
-    if (!chartValuesObject) return [];
-    return Object.entries(chartValuesObject).map(([name, value]) => ({
-        name: name,
-        value: value
-    }));
-};
-
-const ResultsPage = () => {
+const ResultsLitePage = () => {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     
-    // ✅ URL에서 한 번만 읽기 (ref로 저장)
     const queryRef = useRef(searchParams.get('q'));
-    const modelRef = useRef(searchParams.get('model') || 'pro');
+    const modelRef = useRef(searchParams.get('model') || 'lite');
     
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [chartData, setChartData] = useState([]);
     const [tableData, setTableData] = useState([]);
     const [majorFields, setMajorFields] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     
-    // ✅ 한 번만 실행되도록
     const hasFetched = useRef(false);
 
     useEffect(() => {
         const query = queryRef.current;
         const model = modelRef.current;
         
-        console.log('=== Pro useEffect 실행 ===');
+        console.log('=== Lite useEffect 실행 ===');
         console.log('query:', query);
         console.log('model:', model);
         console.log('hasFetched:', hasFetched.current);
@@ -67,19 +52,18 @@ const ResultsPage = () => {
         }
         
         const fetchData = async () => {
-            console.log('🔄 Pro 모드 검색 시작');
-            console.time("API 요청 + 데이터 처리");
+            console.log('🔄 Lite 모드 검색 시작');
+            console.time("Lite 모드 검색");
             
             hasFetched.current = true;
             setIsLoading(true);
             setError(null);
 
             try {
-                const url = 'http://localhost:8000/api/search-and-analyze';
-                const body = { query: query, model: model };
+                const url = 'http://localhost:8000/api/search';
+                const body = { query: query };
                 
                 console.log('📤 POST', url);
-                console.log('📤 Body:', JSON.stringify(body));
                 
                 const searchResponse = await fetch(url, {
                     method: 'POST',
@@ -93,43 +77,48 @@ const ResultsPage = () => {
                     throw new Error(`HTTP error! status: ${searchResponse.status}`);
                 }
 
-                const data1 = await searchResponse.json();
+                const data = await searchResponse.json();
                 console.log('✅ 응답 받음');
                 
-                const report = data1.charts || [];
-                const transformedCharts = report.map(chart_raw => ({
-                    title: chart_raw?.topic,
-                    data: transformChartData(chart_raw?.chart_data[0]?.values) 
-                }));
-                setChartData(transformedCharts);
+                // ✅ 응답 구조 전체 출력
+                console.log('📦 === 응답 데이터 전체 (Lite) ===');
+                // console.log(JSON.stringify(data, null, 2)); // 디버깅 시 너무 길어질 수 있으므로 주석 처리
                 
-                const fields = (data1.display_fields || []).map(item => item.field);
+                // ✅ 데이터 설정
+                // ⭐️ [수정] display_fields 구조에 맞게 field 이름만 추출
+                const fields = (data.display_fields || []).map(item => {
+                    // item이 객체인 경우 item.field를 사용하고, 아니면 item 자체를 사용 (안전성 보강)
+                    return item.field || item;
+                });
+                console.log('✅ 추출된 필드:', fields);
                 setMajorFields(fields);
-
-                const fullTableData = data1.tableData || [];
+                
+                const fullTableData = data.tableData || [];
+                console.log('✅ 설정할 테이블 데이터 길이:', fullTableData.length);
                 setTableData(fullTableData);
                 
                 console.log(`✅ ${fullTableData.length}개 결과 로드 완료`);
                 
             } catch(e) {
-                console.error('❌ 에러:', e);
+                console.error('❌ Lite 모드 오류:', e);
                 setError(e.message);
                 hasFetched.current = false;
             } finally {
                 setIsLoading(false);
                 setCurrentPage(1);
-                console.timeEnd("API 요청 + 데이터 처리");
+                console.timeEnd("Lite 모드 검색");
             }
         };
 
         fetchData();
-    }, []); // ✅ 빈 배열! 한 번만 실행
+    }, []);
 
     const itemsPerPage = 10;
     const totalPages = Math.ceil(tableData.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
     const currentTableData = tableData.slice(startIndex, startIndex + itemsPerPage);
     
+    // ⭐️ [수정] orderedHeaders 생성 로직 유지 (tableData의 키를 기준으로 순서 결정)
     const allKeys = tableData.length > 0 ? Object.keys(tableData[0]) : [];
     const otherKeys = allKeys.filter(key => 
         key !== 'panel_id' && !majorFields.includes(key)
@@ -148,9 +137,7 @@ const ResultsPage = () => {
                     defaultQuery={queryRef.current} 
                     defaultModel={modelRef.current} 
                 />
-                <LoadingIndicator
-                    message="인사이트 도출중입니다. 잠시만 기다려주세요."
-                />
+                <LoadingIndicator message="빠른 검색 중..." />
             </ResultsPageContainer>
         );
     }
@@ -170,6 +157,10 @@ const ResultsPage = () => {
                     }}
                 >
                     '{queryRef.current}'에 대한 검색 결과가 없습니다.
+                    <br/><br/>
+                    <span style={{ fontSize: '14px', color: '#999' }}>
+                        (백엔드 응답은 받았지만 tableData가 비어있습니다. F12 콘솔을 확인하세요.)
+                    </span>
                 </SectionTitle>
             </ResultsPageContainer>
         );
@@ -195,20 +186,13 @@ const ResultsPage = () => {
                 defaultQuery={queryRef.current} 
                 defaultModel={modelRef.current} 
             />
-            <SummaryCard>
-                <ChartRow>
-                    {chartData.map((chart, index) => (
-                        <CategoryPieChart
-                            key={index}
-                            title={chart.title}
-                            data={chart.data}
-                        />
-                    ))}
-                </ChartRow>
-            </SummaryCard>
+            
+            <SectionTitle style={{ marginTop: '40px', fontSize: '18px', color: '#6b7280' }}>
+                🚀 Lite 모드 - 총 {tableData.length}개 결과
+            </SectionTitle>
             
             <TableCard>
-                <SectionTitle>Table</SectionTitle>
+                <SectionTitle>검색 결과</SectionTitle>
                 <StyledTable>
                     <TableHead>
                         <tr>
@@ -304,4 +288,4 @@ const ResultsPage = () => {
     );
 };
 
-export default ResultsPage;
+export default ResultsLitePage;
