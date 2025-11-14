@@ -151,7 +151,21 @@ const ResultsPage = () => {
         key !== 'panel_id' && !majorFields.includes(key)
     );
     const orderedHeaders = [...new Set([...majorFields, ...otherKeys])];
-    const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
+    const pagesPerBlock = 10; // 한 블록에 표시할 페이지 수
+    const currentBlock = Math.ceil(currentPage / pagesPerBlock); // 현재 페이지가 속한 블록
+    const startPage = (currentBlock - 1) * pagesPerBlock + 1;
+    const endPage = Math.min(startPage + pagesPerBlock - 1, totalPages);
+
+    // 화면에 보여줄 페이지 번호 배열
+    const pageNumbers = [];
+    if (totalPages > 0) {
+        for (let i = startPage; i <= endPage; i++) {
+            pageNumbers.push(i);
+        }
+    }
+
+    const prevBlockPage = startPage - pagesPerBlock;
+    const nextBlockPage = startPage + pagesPerBlock;
 
     const handleRowClick = (panel_id) => {
         navigate(`/detail/${panel_id}`);
@@ -297,8 +311,8 @@ const ResultsPage = () => {
             
             <PaginationContainer>
                 <PageButton
-                    onClick={() => setCurrentPage(1)}
-                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage(prevBlockPage)}
+                    disabled={startPage === 1}
                 >
                     {'<<'}
                 </PageButton>
@@ -324,8 +338,8 @@ const ResultsPage = () => {
                     {'>'}
                 </PageButton>
                 <PageButton
-                    onClick={() => setCurrentPage(totalPages)}
-                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage(nextBlockPage)}
+                    disabled={endPage === totalPages}
                 >
                     {'>>'}
                 </PageButton>
