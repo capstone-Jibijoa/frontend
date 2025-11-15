@@ -5,7 +5,12 @@ import SearchBar from '../components/SearchBar';
 import CategoryPieChart from '../components/CategoryPieChart';
 import StackedBarChart from '../components/StackedBarChart';
 import LoadingIndicator from '../components/LoadingIndicator';
-import { KEY_TO_LABEL_MAP } from '../utils/constants';
+import { 
+    KEY_TO_LABEL_MAP, 
+    QPOLL_FIELD_LABEL_MAP, // 헤더 라벨링용 Q-Poll 맵 (새로 추가)
+    QPOLL_KEYS,             // 값 가공 식별용 Q-Poll 키 리스트 (새로 추가)
+    simplifyQpollValue      // 값 가공 헬퍼 함수 (새로 추가)
+} from '../utils/constants';
 import { 
     ResultsPageContainer, 
     SummaryCard, 
@@ -162,7 +167,7 @@ const ResultsPage = () => {
                     defaultModel={model} 
                 />
                 <LoadingIndicator
-                    message="인사이트 도출중입니다. 잠시만 기다려주세요."
+                    message="인사이트를 도출하고 있습니다. 잠시만 기다려 주세요."
                 />
             </ResultsPageContainer>
         );
@@ -245,7 +250,8 @@ const ResultsPage = () => {
                                 .slice(0, 4)
                                 .map((key) => (
                                     <th key={key}>
-                                        {KEY_TO_LABEL_MAP[key] || key}
+                                        {/* [수정] Welcome 필드가 아니면 QPoll 맵에서 라벨을 가져옵니다. */}
+                                        {KEY_TO_LABEL_MAP[key] || QPOLL_FIELD_LABEL_MAP[key] || key}
                                     </th>
                                 ))}
                         </tr>
@@ -269,15 +275,31 @@ const ResultsPage = () => {
                                     .map((key) => {
                                         const value = row[key];
                                         let displayValue;
-                                        
-                                        if (value == null || value === '') {
+                                        const MAX_LENGTH = 30; // 축약 기준 길이
+                                        if (value == null || value === '' || value === '미응답') {
                                             displayValue = '미응답';
-                                        } else if (Array.isArray(value)) {
-                                            displayValue = value.length > 0 ? value.join(', ') : '미응답';
-                                        } else if (typeof value === 'object') {
-                                            displayValue = '[데이터]';
-                                        } else {
-                                            displayValue = String(value);
+                                        } 
+                                        // Q-Poll 필드: simplifyQpollValue 함수가 값 가공 및 길이 처리를 전담
+                                        else if (QPOLL_KEYS.includes(key)) { 
+                                            displayValue = simplifyQpollValue(key, value);
+                                        } 
+                                        // Welcome 필드 처리 (Array, Object, String)
+                                        else { 
+                                            if (Array.isArray(value)) {
+                                                // 배열 (예: drinking_experience)을 문자열로 합침
+                                                displayValue = value.length > 0 ? value.join(', ') : '미응답';
+                                            } else if (typeof value === 'object') {
+                                                // 객체 (JSONB 등)는 문자열로 변환
+                                                displayValue = String(JSON.stringify(value));
+                                            } else {
+                                                // 일반 문자열 (출생연도, 성별 등)
+                                                displayValue = String(value);
+                                            }
+
+                                            // [핵심 수정]: Welcome 필드 최종 출력 값의 길이가 30자를 초과하면 축약
+                                            if (displayValue.length > MAX_LENGTH) {
+                                                displayValue = displayValue.substring(0, MAX_LENGTH) + '...';
+                                            }
                                         }
 
                                         return (
