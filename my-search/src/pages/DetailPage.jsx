@@ -99,8 +99,18 @@ const DetailPage = () => {
                             
                             if (value == null || value === '') {
                                 displayValue = '미응답';
-                            } else if (typeof value === 'object') {
-                                // 객체/배열은 JSON 문자열로
+                            } 
+                            // [수정] 빈 배열([])인 경우를 명시적으로 처리
+                            else if (Array.isArray(value) && value.length === 0) {
+                                displayValue = '미응답';
+                            }
+                            // [기존 로직] 배열이면서 내용이 있는 경우
+                            else if (Array.isArray(value)) {
+                                // 내용이 있는 배열은 Join하여 출력
+                                displayValue = value.join(', ');
+                            }
+                            // [기존 로직] 객체인 경우 (또는 다른 타입 객체)
+                            else if (typeof value === 'object') {
                                 displayValue = JSON.stringify(value);
                             } else {
                                 displayValue = String(value);
