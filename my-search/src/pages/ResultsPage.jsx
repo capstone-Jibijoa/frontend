@@ -162,7 +162,7 @@ const ResultsPage = () => {
                     defaultModel={model} 
                 />
                 <LoadingIndicator
-                    message="인사이트 도출중입니다. 잠시만 기다려주세요."
+                    message="인사이트를 도출하고 있습니다. 잠시만 기다려 주세요."
                 />
             </ResultsPageContainer>
         );
