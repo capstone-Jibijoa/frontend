@@ -3,11 +3,12 @@ import styled from 'styled-components';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import SearchBar from '../components/SearchBar';
 import LoadingIndicator from '../components/LoadingIndicator';
+import { useSearchResults } from '../contexts/SearchResultContext';
 import { 
     KEY_TO_LABEL_MAP,
-    QPOLL_FIELD_LABEL_MAP, // 헤더 라벨링용 Q-Poll 맵 (새로 추가)
-    QPOLL_KEYS,             // 값 가공 식별용 Q-Poll 키 리스트 (새로 추가)
-    simplifyQpollValue      // 값 가공 헬퍼 함수 (새로 추가)
+    QPOLL_FIELD_LABEL_MAP, // 헤더 라벨링용 Q-Poll 맵
+    QPOLL_KEYS,          // 값 가공 식별용 Q-Poll 키 리스트
+    simplifyQpollValue   // 값 가공 헬퍼 함수
 } from '../utils/constants';
 import { 
     ResultsPageContainer, 
@@ -28,29 +29,46 @@ const ResultsLitePage = () => {
     const query = searchParams.get('q');
     const model = searchParams.get('model') || 'lite';
     
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [tableData, setTableData] = useState([]);
-    const [majorFields, setMajorFields] = useState([]);
+    const { resultsState, setResultsState } = useSearchResults();
+    const {
+        isLoading,
+        error,
+        tableData,
+        majorFields,
+        lastLoadedQuery
+    } = resultsState;
+    
     const [currentPage, setCurrentPage] = useState(1);
 
     useEffect(() => {
-        if (!query) {
-            console.log('query 없음');
-            setIsLoading(false);
-            setTableData([]);
+        if (query && query === lastLoadedQuery && model === resultsState.model) {
+            setResultsState(prev => ({ ...prev, isLoading: false, error: null }));
             return;
         }
         
+        if (!query) {
+            console.log('query 없음');
+            setResultsState({
+                query: '', model: 'lite', tableData: [], chartData: [], 
+                majorFields: [], lastLoadedQuery: '', isLoading: false, error: null 
+            });
+            return;
+        }
         const fetchData = async () => {
             console.log('Lite 모드 검색 시작');
             console.time("Lite 모드 검색");
             
-            setIsLoading(true);
-            setError(null);
+            setResultsState(prev => ({ 
+                ...prev, 
+                isLoading: true, 
+                error: null,
+                query: query,
+                model: model
+            }));
 
             try {
-                const url = 'http://localhost:8000/api/search';
+                const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+                const url = `${API_BASE_URL}/api/search`;
                 const body = { query: query };
                 
                 console.log('POST', url);
@@ -68,42 +86,44 @@ const ResultsLitePage = () => {
                 }
 
                 const data = await searchResponse.json();
-                // [디버깅 코드]
-                console.log('[디버깅] 백엔드에서 받은 실제 응답 객체:', data);
-                console.log('[디버깅] tableData 키 확인:', data.tableData);
-                // [디버깅 코드 끝]
                 console.log('응답 받음');
                 
-                // 응답 구조 전체 출력
-                console.log('=== 응답 데이터 전체 (Lite) ===');
-                // console.log(JSON.stringify(data, null, 2)); // 디버깅 시 너무 길어질 수 있으므로 주석 처리
-                
-                // 데이터 설정
                 const fields = (data.display_fields || []).map(item => {
-                    // item이 객체인 경우 item.field를 사용하고, 아니면 item 자체를 사용 (안전성 보강)
                     return item.field || item;
                 });
                 console.log('추출된 필드:', fields);
-                setMajorFields(fields);
                 
                 const fullTableData = data.tableData || [];
-                console.log('설정할 테이블 데이터 길이:', fullTableData.length);
-                setTableData(fullTableData);
+
+                setResultsState(prev => ({
+                    ...prev,
+                    tableData: fullTableData,
+                    majorFields: fields,
+                    chartData: [], 
+                    lastLoadedQuery: query,
+                    isLoading: false,
+                    error: null,
+                    model: model
+                }));
                 
+                setCurrentPage(1);
+
                 console.log(`${fullTableData.length}개 결과 로드 완료`);
-                
             } catch(e) {
                 console.error('Lite 모드 오류:', e);
-                setError(e.message);
+                setResultsState(prev => ({ 
+                    ...prev, 
+                    error: e.message, 
+                    isLoading: false, 
+                    tableData: [] 
+                }));
             } finally {
-                setIsLoading(false);
-                setCurrentPage(1);
                 console.timeEnd("Lite 모드 검색");
             }
         };
 
         fetchData();
-    }, [query, model]);
+    }, [query, model, lastLoadedQuery, resultsState.model, setResultsState]);
 
     const itemsPerPage = 10;
     const totalPages = Math.ceil(tableData.length / itemsPerPage);
@@ -114,7 +134,9 @@ const ResultsLitePage = () => {
     const otherKeys = allKeys.filter(key => 
         key !== 'panel_id' && !majorFields.includes(key)
     );
+    // 주요 필드 -> 기타 필드 순으로 정렬 (중복 제거)
     const orderedHeaders = [...new Set([...majorFields, ...otherKeys])];
+    
     const pagesPerBlock = 10; // 한 블록에 표시할 페이지 수
     const currentBlock = Math.ceil(currentPage / pagesPerBlock); // 현재 페이지가 속한 블록
     const startPage = (currentBlock - 1) * pagesPerBlock + 1;
@@ -203,6 +225,7 @@ const ResultsLitePage = () => {
                         <tr>
                             <th>목록번호</th>
                             {orderedHeaders
+                                // panel_id는 제외하고 최대 4개 필드만 표시
                                 .filter(key => key !== 'panel_id')
                                 .slice(0, 4)
                                 .map((key) => (
@@ -220,9 +243,8 @@ const ResultsLitePage = () => {
                                 style={{ cursor: 'pointer' }}
                             >
                                 <td>
-                                    <StyledLink to={`/detail/${row.panel_id}`}>
-                                        {startIndex + index + 1}
-                                    </StyledLink>
+                                    {/* Link를 제거하고 목록 번호만 표시합니다. 행 전체가 클릭 가능합니다. */}
+                                    {startIndex + index + 1}
                                 </td>
 
                                 {orderedHeaders
@@ -245,7 +267,7 @@ const ResultsLitePage = () => {
                                             if (Array.isArray(value)) {
                                                 // 배열 (예: drinking_experience)을 문자열로 합침
                                                 displayValue = value.length > 0 ? value.join(', ') : '미응답';
-                                            } else if (typeof value === 'object') {
+                                            } else if (typeof value === 'object' && value !== null) {
                                                 // 객체 (JSONB 등)는 문자열로 변환
                                                 displayValue = String(JSON.stringify(value));
                                             } else {
@@ -253,7 +275,7 @@ const ResultsLitePage = () => {
                                                 displayValue = String(value);
                                             }
 
-                                            // [핵심 수정]: Welcome 필드 최종 출력 값의 길이가 30자를 초과하면 축약
+                                            // Welcome 필드 최종 출력 값의 길이가 30자를 초과하면 축약
                                             if (displayValue.length > MAX_LENGTH) {
                                                 displayValue = displayValue.substring(0, MAX_LENGTH) + '...';
                                             }
@@ -271,41 +293,52 @@ const ResultsLitePage = () => {
                 </StyledTable>
             </TableCard>
             
-            <PaginationContainer>
-                <PageButton
-                    onClick={() => setCurrentPage(prevBlockPage)}
-                    disabled={startPage === 1}
-                >
-                    {'<<'}
-                </PageButton>
-                <PageButton 
-                    disabled={currentPage === 1} 
-                    onClick={() => setCurrentPage(currentPage - 1)}
-                >
-                    {'<'}
-                </PageButton>
-                {pageNumbers.map((pageNumber) => (
+            {/* 페이지네이션 컴포넌트 */}
+            {totalPages > 1 && (
+                <PaginationContainer>
+                    {/* 이전 블록 */}
                     <PageButton
-                        key={pageNumber}
-                        $active={currentPage === pageNumber}
-                        onClick={() => setCurrentPage(pageNumber)}
+                        onClick={() => setCurrentPage(prevBlockPage)}
+                        disabled={startPage === 1}
                     >
-                        {pageNumber}
+                        {'<<'}
                     </PageButton>
-                ))}
-                <PageButton 
-                    disabled={currentPage === totalPages} 
-                    onClick={() => setCurrentPage(currentPage + 1)}
-                >
-                    {'>'}
-                </PageButton>
-                <PageButton
-                    onClick={() => setCurrentPage(nextBlockPage)}
-                    disabled={endPage === totalPages}
-                >
-                    {'>>'}
-                </PageButton>
-            </PaginationContainer>
+                    {/* 이전 페이지 */}
+                    <PageButton 
+                        disabled={currentPage === 1} 
+                        onClick={() => setCurrentPage(currentPage - 1)}
+                    >
+                        {'<'}
+                    </PageButton>
+                    
+                    {/* 페이지 번호 */}
+                    {pageNumbers.map((pageNumber) => (
+                        <PageButton
+                            key={pageNumber}
+                            // Styled-components에서 $active prop을 사용하는 방식으로 유지
+                            $active={currentPage === pageNumber} 
+                            onClick={() => setCurrentPage(pageNumber)}
+                        >
+                            {pageNumber}
+                        </PageButton>
+                    ))}
+                    
+                    {/* 다음 페이지 */}
+                    <PageButton 
+                        disabled={currentPage === totalPages} 
+                        onClick={() => setCurrentPage(currentPage + 1)}
+                    >
+                        {'>'}
+                    </PageButton>
+                    {/* 다음 블록 */}
+                    <PageButton
+                        onClick={() => setCurrentPage(nextBlockPage)}
+                        disabled={endPage === totalPages}
+                    >
+                        {'>>'}
+                    </PageButton>
+                </PaginationContainer>
+            )}
         </ResultsPageContainer>
     );
 };
