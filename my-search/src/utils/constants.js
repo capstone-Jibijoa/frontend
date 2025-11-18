@@ -23,7 +23,8 @@ export const KEY_TO_LABEL_MAP = {
     "e_cigarette_experience": "전자 담배 이용 경험",
     "smoking_brand_other_details_raw": "기타 흡연 세부 사항",
     "drinking_experience": "음주 경험",
-    "drinking_experience_other_details_raw": "음주 세부 사항"
+    "drinking_experience_other_details_raw": "음주 세부 사항",
+    "owned_electronics" : "보유 가전제품"
 };
 
 export const QPOLL_FIELD_LABEL_MAP = {

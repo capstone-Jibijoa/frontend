@@ -5,6 +5,7 @@ import SearchBar from '../components/SearchBar';
 import CategoryPieChart from '../components/CategoryPieChart';
 import StackedBarChart from '../components/StackedBarChart';
 import LoadingIndicator from '../components/LoadingIndicator';
+import { useSearchResults } from '../contexts/SearchResultContext';
 import { 
     KEY_TO_LABEL_MAP, 
     QPOLL_FIELD_LABEL_MAP, // 헤더 라벨링용 Q-Poll 맵 (새로 추가)
@@ -41,32 +42,50 @@ const ResultsPage = () => {
     const query = searchParams.get('q');
     const model = searchParams.get('model') || 'pro';
     
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [chartData, setChartData] = useState([]);
-    const [tableData, setTableData] = useState([]);
-    const [majorFields, setMajorFields] = useState([]);
+    const { resultsState, setResultsState } = useSearchResults();
+    const {
+        isLoading,
+        error,
+        chartData,
+        tableData,
+        majorFields,
+        lastLoadedQuery
+    } = resultsState;
+    
     const [currentPage, setCurrentPage] = useState(1);
     const [filters, setFilters] = useState({}); // 필터 상태 추가
     
     useEffect(() => {
+        if (query && query === lastLoadedQuery && model === resultsState.model) {
+            console.log('이전 검색 결과가 유효하여 API 호출을 건너뜁니다.');
+            setResultsState(prev => ({ ...prev, isLoading: false, error: null }));
+            return;
+        }
+
         if (!query) {
             console.log('query 없음');
-            setIsLoading(false);
-            setTableData([]);
-            setChartData([]);
+            setResultsState({
+                query: '', model: 'pro', tableData: [], chartData: [], 
+                majorFields: [], lastLoadedQuery: '', isLoading: false, error: null 
+            });
             return;
         }
         
         const fetchData = async () => {
-            console.log('Pro 모드 검색 시작');
+            console.log(`[${model} 모드] 검색 시작: ${query}`);
             console.time("API 요청 + 데이터 처리");
             
-            setIsLoading(true);
-            setError(null);
+            setResultsState(prev => ({ 
+                ...prev, 
+                isLoading: true, 
+                error: null,
+                query: query,
+                model: model
+            }));
 
             try {
-                const url = 'http://localhost:8000/api/search-and-analyze';
+                const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+                const url = `${API_BASE_URL}/api/search-and-analyze`;
                 const body = { query: query, model: model };
                 
                 console.log('POST', url);
@@ -106,30 +125,40 @@ const ResultsPage = () => {
                         };
                     }
                 });
-    
-                setChartData(transformedCharts);
-                
-                const fields = (data1.display_fields || []).map(item => item.field);
-                setMajorFields(fields);
 
+                const fields = (data1.display_fields || []).map(item => item.field);
                 const fullTableData = data1.tableData || [];
-                setTableData(fullTableData);
                 
+                setResultsState(prev => ({
+                    ...prev,
+                    chartData: transformedCharts, 
+                    tableData: fullTableData,     
+                    majorFields: fields,          
+                    lastLoadedQuery: query, 
+                    isLoading: false,
+                    error: null,
+                    model: model 
+                }));
+
+                setCurrentPage(1);
                 console.log(`${fullTableData.length}개 결과 로드 완료`);
                 
             } catch(e) {
                 console.error('에러:', e);
-                setError(e.message);
+                setResultsState(prev => ({ 
+                    ...prev, 
+                    error: e.message, 
+                    isLoading: false, 
+                    tableData: [], 
+                    chartData: [] 
+                }));
             } finally {
-                setIsLoading(false);
-                setCurrentPage(1);
-                setFilters({}); // 새 검색 시 필터 초기화
                 console.timeEnd("API 요청 + 데이터 처리");
             }
         };
 
         fetchData();
-    }, [query, model]);
+    }, [query, model, lastLoadedQuery]);
 
     const handleFilterChange = (e, key) => {
         setFilters(prev => ({ ...prev, [key]: e.target.value }));
