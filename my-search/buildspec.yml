@@ -2,6 +2,9 @@
 version: 0.2
 phases:
   install:
+    runtime-versions:
+        # Node.js 런타임 버전을 명시 (매우 중요)
+        nodejs: 20
     commands:
       # Node.js 환경 설정
       - echo Installing dependencies...
