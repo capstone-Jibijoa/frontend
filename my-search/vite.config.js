@@ -4,7 +4,6 @@ import path from 'path'
 
 // https://vite.dev/config/
 export default defineConfig({
-  root: path.resolve(__dirname, 'src'),
   plugins: [react()],
   build: {
     outDir: path.resolve(__dirname, 'build'),
