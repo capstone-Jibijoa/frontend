@@ -2,15 +2,16 @@ import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import SearchBar from '../components/SearchBar';
+import HomeButton from '../components/HomeButton';
 import CategoryPieChart from '../components/CategoryPieChart';
 import StackedBarChart from '../components/StackedBarChart';
 import LoadingIndicator from '../components/LoadingIndicator';
 import { useSearchResults } from '../contexts/SearchResultContext';
 import { 
     KEY_TO_LABEL_MAP, 
-    QPOLL_FIELD_LABEL_MAP, // 헤더 라벨링용 Q-Poll 맵 (새로 추가)
-    QPOLL_KEYS,             // 값 가공 식별용 Q-Poll 키 리스트 (새로 추가)
-    simplifyQpollValue      // 값 가공 헬퍼 함수 (새로 추가)
+    QPOLL_FIELD_LABEL_MAP, 
+    QPOLL_KEYS, 
+    simplifyQpollValue 
 } from '../utils/constants';
 import { 
     ResultsPageContainer, 
@@ -24,7 +25,8 @@ import {
     TableBody, 
     StyledLink,
     PaginationContainer,
-    PageButton    
+    PageButton,
+    HeaderRow
 } from '../style/ResultPage.styles';
 
 const transformChartData = (chartValuesObject) => {
@@ -132,8 +134,8 @@ const ResultsPage = () => {
                 setResultsState(prev => ({
                     ...prev,
                     chartData: transformedCharts, 
-                    tableData: fullTableData,     
-                    majorFields: fields,          
+                    tableData: fullTableData,      
+                    majorFields: fields,           
                     lastLoadedQuery: query, 
                     isLoading: false,
                     error: null,
@@ -184,13 +186,22 @@ const ResultsPage = () => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const currentTableData = filteredData.slice(startIndex, startIndex + itemsPerPage);
     
+<<<<<<< HEAD
+    const allKeys = tableData.length > 0 ? Object.keys(tableData[0]) : [];
+    const otherKeys = allKeys.filter(key => 
+        key !== 'panel_id' && !majorFields.includes(key)
+    );
+    const orderedHeaders = [...new Set([...majorFields, ...otherKeys])];
+    const pagesPerBlock = 10; 
+    const currentBlock = Math.ceil(currentPage / pagesPerBlock); 
+=======
     const orderedHeaders = [...majorFields]; // 이 부분은 이전 제안을 유지합니다.
     const pagesPerBlock = 10; // 한 블록에 표시할 페이지 수
     const currentBlock = Math.ceil(currentPage / pagesPerBlock); // 현재 페이지가 속한 블록
+>>>>>>> 5146310cdbb774a5a15f86e29cd6edf91b114301
     const startPage = (currentBlock - 1) * pagesPerBlock + 1;
     const endPage = Math.min(startPage + pagesPerBlock - 1, totalPages);
 
-    // 화면에 보여줄 페이지 번호 배열
     const pageNumbers = [];
     if (totalPages > 0) {
         for (let i = startPage; i <= endPage; i++) {
@@ -205,13 +216,24 @@ const ResultsPage = () => {
         navigate(`/detail/${panel_id}`);
     };
 
+    // 헤더 렌더링: HomeButton을 왼쪽으로 배치
+    const renderHeader = () => (
+        <HeaderRow>
+            {/* 버튼을 먼저 둡니다 (왼쪽 배치) */}
+            <HomeButton />
+            {/* SearchBar에 marginTop="0px"를 주어 정렬을 맞춥니다 */}
+            <SearchBar 
+                defaultQuery={query} 
+                defaultModel={model} 
+                marginTop="0px"
+            />
+        </HeaderRow>
+    );
+
     if (isLoading) {
         return (
             <ResultsPageContainer>
-                <SearchBar 
-                    defaultQuery={query} 
-                    defaultModel={model} 
-                />
+                {renderHeader()}
                 <LoadingIndicator
                     message="인사이트를 도출하고 있습니다. 잠시만 기다려 주세요."
                 />
@@ -222,10 +244,7 @@ const ResultsPage = () => {
     if (tableData.length === 0 && !error) {
         return (
             <ResultsPageContainer>
-                <SearchBar 
-                    defaultQuery={query} 
-                    defaultModel={model} 
-                />
+                {renderHeader()}
                 <SectionTitle
                     style={{
                         marginTop: '60px',
@@ -242,10 +261,7 @@ const ResultsPage = () => {
     if (error) {
         return (
             <ResultsPageContainer>
-                <SearchBar 
-                    defaultQuery={query} 
-                    defaultModel={model} 
-                />
+                {renderHeader()}
                 <SectionTitle style={{ marginTop: '40px', color: 'red' }}>
                     데이터 로드 실패: {error}
                 </SectionTitle>
@@ -255,10 +271,7 @@ const ResultsPage = () => {
 
     return (
         <ResultsPageContainer>
-            <SearchBar 
-                defaultQuery={query} 
-                defaultModel={model} 
-            />
+            {renderHeader()}
             <SummaryCard>
                 <ChartRow>
                     {chartData.map((chart, index) => {
@@ -295,7 +308,10 @@ const ResultsPage = () => {
                                 .filter(key => key !== 'panel_id')
                                 .map((key) => (
                                     <th key={key}>
+<<<<<<< HEAD
+=======
                                         {/* Welcome 필드가 아니면 QPoll 맵에서 라벨을 가져옵니다. */}
+>>>>>>> 5146310cdbb774a5a15f86e29cd6edf91b114301
                                         {KEY_TO_LABEL_MAP[key] || QPOLL_FIELD_LABEL_MAP[key] || key}
                                     </th>
                                 ))}
@@ -334,28 +350,22 @@ const ResultsPage = () => {
                                     .map((key) => {
                                         const value = row[key];
                                         let displayValue;
-                                        const MAX_LENGTH = 30; // 축약 기준 길이
+                                        const MAX_LENGTH = 30; 
                                         if (value == null || value === '' || value === '미응답') {
                                             displayValue = '미응답';
                                         } 
-                                        // Q-Poll 필드: simplifyQpollValue 함수가 값 가공 및 길이 처리를 전담
                                         else if (QPOLL_KEYS.includes(key)) { 
                                             displayValue = simplifyQpollValue(key, value);
                                         } 
-                                        // Welcome 필드 처리 (Array, Object, String)
                                         else { 
                                             if (Array.isArray(value)) {
-                                                // 배열 (예: drinking_experience)을 문자열로 합침
                                                 displayValue = value.length > 0 ? value.join(', ') : '미응답';
                                             } else if (typeof value === 'object') {
-                                                // 객체 (JSONB 등)는 문자열로 변환
                                                 displayValue = String(JSON.stringify(value));
                                             } else {
-                                                // 일반 문자열 (출생연도, 성별 등)
                                                 displayValue = String(value);
                                             }
 
-                                            // [핵심 수정]: Welcome 필드 최종 출력 값의 길이가 30자를 초과하면 축약
                                             if (displayValue.length > MAX_LENGTH) {
                                                 displayValue = displayValue.substring(0, MAX_LENGTH) + '...';
                                             }
