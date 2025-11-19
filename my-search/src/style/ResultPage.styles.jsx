@@ -167,7 +167,7 @@ export const PageButton = styled.button`
     }
 `;
 
-const HeaderRow = styled.div`
+export const HeaderRow = styled.div`
     display: flex;
     align-items: center;
     justify-content: center;
