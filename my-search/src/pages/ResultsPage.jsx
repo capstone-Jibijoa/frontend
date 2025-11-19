@@ -55,6 +55,7 @@ const ResultsPage = () => {
     } = resultsState;
     
     const [currentPage, setCurrentPage] = useState(1);
+    const [filters, setFilters] = useState({}); // 필터 상태 추가
     
     useEffect(() => {
         if (query && query === lastLoadedQuery && model === resultsState.model) {
@@ -161,11 +162,31 @@ const ResultsPage = () => {
         fetchData();
     }, [query, model, lastLoadedQuery]);
 
+    const handleFilterChange = (e, key) => {
+        setFilters(prev => ({ ...prev, [key]: e.target.value }));
+        setCurrentPage(1); // 필터 변경 시 1페이지로 이동
+    };
+
+    // 필터링 로직 적용
+    const filteredData = tableData.filter(row => {
+        return Object.keys(filters).every(key => {
+            const filterValue = filters[key];
+            if (!filterValue) return true; // 해당 키에 필터 값이 없으면 통과
+
+            const rowValue = row[key];
+            if (rowValue == null) return false; // 행에 값이 없으면 필터링(제외)
+
+            // 대소문자 구분 없이 필터링
+            return String(rowValue).toLowerCase().includes(filterValue.toLowerCase());
+        });
+    });
+
     const itemsPerPage = 10;
-    const totalPages = Math.ceil(tableData.length / itemsPerPage);
+    const totalPages = Math.ceil(filteredData.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
-    const currentTableData = tableData.slice(startIndex, startIndex + itemsPerPage);
+    const currentTableData = filteredData.slice(startIndex, startIndex + itemsPerPage);
     
+<<<<<<< HEAD
     const allKeys = tableData.length > 0 ? Object.keys(tableData[0]) : [];
     const otherKeys = allKeys.filter(key => 
         key !== 'panel_id' && !majorFields.includes(key)
@@ -173,6 +194,11 @@ const ResultsPage = () => {
     const orderedHeaders = [...new Set([...majorFields, ...otherKeys])];
     const pagesPerBlock = 10; 
     const currentBlock = Math.ceil(currentPage / pagesPerBlock); 
+=======
+    const orderedHeaders = [...majorFields]; // 이 부분은 이전 제안을 유지합니다.
+    const pagesPerBlock = 10; // 한 블록에 표시할 페이지 수
+    const currentBlock = Math.ceil(currentPage / pagesPerBlock); // 현재 페이지가 속한 블록
+>>>>>>> 5146310cdbb774a5a15f86e29cd6edf91b114301
     const startPage = (currentBlock - 1) * pagesPerBlock + 1;
     const endPage = Math.min(startPage + pagesPerBlock - 1, totalPages);
 
@@ -280,10 +306,29 @@ const ResultsPage = () => {
                             <th>목록번호</th>
                             {orderedHeaders
                                 .filter(key => key !== 'panel_id')
-                                .slice(0, 4)
                                 .map((key) => (
                                     <th key={key}>
+<<<<<<< HEAD
+=======
+                                        {/* Welcome 필드가 아니면 QPoll 맵에서 라벨을 가져옵니다. */}
+>>>>>>> 5146310cdbb774a5a15f86e29cd6edf91b114301
                                         {KEY_TO_LABEL_MAP[key] || QPOLL_FIELD_LABEL_MAP[key] || key}
+                                    </th>
+                                ))}
+                        </tr>
+                        {/* 필터 입력 행 추가 */}
+                        <tr>
+                            <th></th>
+                            {orderedHeaders
+                                .filter(key => key !== 'panel_id')
+                                .map((key) => (
+                                    <th key={`${key}-filter`}>
+                                        <input
+                                            type="text"
+                                            placeholder="필터..."
+                                            value={filters[key] || ''}
+                                            onChange={(e) => handleFilterChange(e, key)}
+                                            style={{ width: '100%', boxSizing: 'border-box' }}/>
                                     </th>
                                 ))}
                         </tr>
@@ -300,10 +345,8 @@ const ResultsPage = () => {
                                         {startIndex + index + 1}
                                     </StyledLink>
                                 </td>
-
                                 {orderedHeaders
                                     .filter(key => key !== 'panel_id')
-                                    .slice(0, 4)
                                     .map((key) => {
                                         const value = row[key];
                                         let displayValue;
