@@ -186,7 +186,6 @@ const ResultsPage = () => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const currentTableData = filteredData.slice(startIndex, startIndex + itemsPerPage);
     
-<<<<<<< HEAD
     const allKeys = tableData.length > 0 ? Object.keys(tableData[0]) : [];
     const otherKeys = allKeys.filter(key => 
         key !== 'panel_id' && !majorFields.includes(key)
@@ -194,11 +193,7 @@ const ResultsPage = () => {
     const orderedHeaders = [...new Set([...majorFields, ...otherKeys])];
     const pagesPerBlock = 10; 
     const currentBlock = Math.ceil(currentPage / pagesPerBlock); 
-=======
-    const orderedHeaders = [...majorFields]; // 이 부분은 이전 제안을 유지합니다.
-    const pagesPerBlock = 10; // 한 블록에 표시할 페이지 수
-    const currentBlock = Math.ceil(currentPage / pagesPerBlock); // 현재 페이지가 속한 블록
->>>>>>> 5146310cdbb774a5a15f86e29cd6edf91b114301
+
     const startPage = (currentBlock - 1) * pagesPerBlock + 1;
     const endPage = Math.min(startPage + pagesPerBlock - 1, totalPages);
 
@@ -308,10 +303,6 @@ const ResultsPage = () => {
                                 .filter(key => key !== 'panel_id')
                                 .map((key) => (
                                     <th key={key}>
-<<<<<<< HEAD
-=======
-                                        {/* Welcome 필드가 아니면 QPoll 맵에서 라벨을 가져옵니다. */}
->>>>>>> 5146310cdbb774a5a15f86e29cd6edf91b114301
                                         {KEY_TO_LABEL_MAP[key] || QPOLL_FIELD_LABEL_MAP[key] || key}
                                     </th>
                                 ))}
