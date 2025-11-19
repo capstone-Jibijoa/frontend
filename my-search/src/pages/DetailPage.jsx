@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react'; 
 import styled from 'styled-components';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import SearchBar from '../components/SearchBar';
+import HomeButton from '../components/HomeButton';
 import LoadingIndicator from '../components/LoadingIndicator';
 import { getFieldLabel } from '../utils/constants';
 import { 
@@ -14,12 +15,26 @@ import {
     BackButton 
 } from '../style/DetailPage.styles';
 
-// DetailPage 컴포넌트
+// 중앙 정렬 및 아이템 간격 설정
+const HeaderRow = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    width: 100%;
+    max-width: 100%;
+    margin-bottom: 20px;
+    margin-top: 30px; /* 상단 여백은 컨테이너에서 처리 */
+
+    @media (max-width: 768px) {
+        flex-direction: column;
+    }
+`;
+
 const DetailPage = () => {
     const { panel_id } = useParams();
     const navigate = useNavigate();
 
-    // 데이터를 위한 state
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     const [detailData, setDetailData] = useState({});
@@ -36,7 +51,6 @@ const DetailPage = () => {
                 }
                 const data = await response.json();
                 
-                // 백엔드에서 데이터 주는 방식 확인
                 setDetailData(data.detail || data || {});
             } catch (e) {
                 console.error("Fetch error:", e);
@@ -48,10 +62,22 @@ const DetailPage = () => {
         fetchDataForId();
     }, [panel_id]);
     
+    // 헤더 렌더링: HomeButton을 왼쪽으로, SearchBar 마진 제거
+    const renderHeader = () => (
+        <HeaderRow>
+            <HomeButton />
+            <SearchBar 
+                width="100%" 
+                maxWidth="100%" 
+                marginTop="0px" // SearchBar 자체 여백 제거
+            />
+        </HeaderRow>
+    );
+
     if (isLoading) {
         return (
             <PageContainer>
-                <SearchBar width="100%" maxWidth="100%" />
+                {renderHeader()}
                 <LoadingIndicator 
                     message={`상세 정보를 불러오는 중...`} 
                 />
@@ -62,7 +88,7 @@ const DetailPage = () => {
     if (error) {
         return (
             <PageContainer>
-                <SearchBar width="100%" maxWidth="100%" />
+                {renderHeader()}
                 <h2 style={{ marginTop: '40px', color: 'red' }}>
                     데이터 로드 실패: {error}
                 </h2>
@@ -72,44 +98,36 @@ const DetailPage = () => {
 
     return (
         <PageContainer>
-            <SearchBar />
+            {renderHeader()}
             <DetailCard>
                 <InfoGrid>
                     {Object.entries(detailData)
                         .filter(([key]) => {
-                            // 제외할 필드
                             const excludeFields = [
                                 'panel_id',
-                                'subjective_vector',  // 벡터 데이터
-                                'qpoll_조회_오류'     // 에러 메시지 (필요시 표시)
+                                'subjective_vector',
+                                'qpoll_조회_오류'
                             ];
                             return !excludeFields.includes(key);
                         })
                         .map(([key, value]) => {
-                            // 통합 라벨 함수 사용 (Welcome + QPoll)
                             const label = getFieldLabel(key);
 
                             if (!label) {
-                                // 라벨이 없는 키는 표시 안 함
                                 return null;
                             }
 
-                            // 값 처리
                             let displayValue;
                             
                             if (value == null || value === '') {
                                 displayValue = '미응답';
                             } 
-                            // [수정] 빈 배열([])인 경우를 명시적으로 처리
                             else if (Array.isArray(value) && value.length === 0) {
                                 displayValue = '미응답';
                             }
-                            // [기존 로직] 배열이면서 내용이 있는 경우
                             else if (Array.isArray(value)) {
-                                // 내용이 있는 배열은 Join하여 출력
                                 displayValue = value.join(', ');
                             }
-                            // [기존 로직] 객체인 경우 (또는 다른 타입 객체)
                             else if (typeof value === 'object') {
                                 displayValue = JSON.stringify(value);
                             } else {

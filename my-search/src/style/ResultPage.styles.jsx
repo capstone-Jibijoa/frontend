@@ -166,3 +166,12 @@ export const PageButton = styled.button`
         background-color: #f9fafb;
     }
 `;
+
+const HeaderRow = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    width: 100%;
+    margin-top: 30px;
+`;

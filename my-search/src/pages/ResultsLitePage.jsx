@@ -2,13 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import SearchBar from '../components/SearchBar';
+import HomeButton from '../components/HomeButton';
 import LoadingIndicator from '../components/LoadingIndicator';
 import { useSearchResults } from '../contexts/SearchResultContext';
 import { 
     KEY_TO_LABEL_MAP,
-    QPOLL_FIELD_LABEL_MAP, // 헤더 라벨링용 Q-Poll 맵
-    QPOLL_KEYS,          // 값 가공 식별용 Q-Poll 키 리스트
-    simplifyQpollValue   // 값 가공 헬퍼 함수
+    QPOLL_FIELD_LABEL_MAP, 
+    QPOLL_KEYS,          
+    simplifyQpollValue   
 } from '../utils/constants';
 import { 
     ResultsPageContainer, 
@@ -19,7 +20,8 @@ import {
     TableBody, 
     StyledLink,
     PaginationContainer,
-    PageButton    
+    PageButton,
+    HeaderRow    
 } from '../style/ResultPage.styles';
 
 const ResultsLitePage = () => {
@@ -137,8 +139,8 @@ const ResultsLitePage = () => {
     // 주요 필드 -> 기타 필드 순으로 정렬 (중복 제거)
     const orderedHeaders = [...new Set([...majorFields, ...otherKeys])];
     
-    const pagesPerBlock = 10; // 한 블록에 표시할 페이지 수
-    const currentBlock = Math.ceil(currentPage / pagesPerBlock); // 현재 페이지가 속한 블록
+    const pagesPerBlock = 10; 
+    const currentBlock = Math.ceil(currentPage / pagesPerBlock); 
     const startPage = (currentBlock - 1) * pagesPerBlock + 1;
     const endPage = Math.min(startPage + pagesPerBlock - 1, totalPages);
 
@@ -157,13 +159,22 @@ const ResultsLitePage = () => {
         navigate(`/detail/${panel_id}`);
     };
 
+    // 헤더 렌더링 함수 (홈버튼 + 검색창)
+    const renderHeader = () => (
+        <HeaderRow>
+            <HomeButton />
+            <SearchBar 
+                defaultQuery={query} 
+                defaultModel={model} 
+                marginTop="0px" // SearchBar 자체 여백 제거
+            />
+        </HeaderRow>
+    );
+
     if (isLoading) {
         return (
             <ResultsPageContainer>
-                <SearchBar 
-                    defaultQuery={query} 
-                    defaultModel={model} 
-                />
+                {renderHeader()}
                 <LoadingIndicator message="빠른 검색 중..." />
             </ResultsPageContainer>
         );
@@ -172,10 +183,7 @@ const ResultsLitePage = () => {
     if (tableData.length === 0 && !error) {
         return (
             <ResultsPageContainer>
-                <SearchBar 
-                    defaultQuery={query} 
-                    defaultModel={model} 
-                />
+                {renderHeader()}
                 <SectionTitle
                     style={{
                         marginTop: '60px',
@@ -196,10 +204,7 @@ const ResultsLitePage = () => {
     if (error) {
         return (
             <ResultsPageContainer>
-                <SearchBar 
-                    defaultQuery={query} 
-                    defaultModel={model} 
-                />
+                {renderHeader()}
                 <SectionTitle style={{ marginTop: '40px', color: 'red' }}>
                     데이터 로드 실패: {error}
                 </SectionTitle>
@@ -209,10 +214,7 @@ const ResultsLitePage = () => {
 
     return (
         <ResultsPageContainer>
-            <SearchBar 
-                defaultQuery={query} 
-                defaultModel={model}  
-            />
+            {renderHeader()}
             
             <SectionTitle style={{ marginTop: '50px', fontSize: '20px', color: '#6b7280' }}>
                 총 {tableData.length}개의 검색 결과
@@ -258,24 +260,18 @@ const ResultsLitePage = () => {
                                         if (value == null || value === '' || value === '미응답') {
                                             displayValue = '미응답';
                                         } 
-                                        // Q-Poll 필드: simplifyQpollValue 함수가 값 가공 및 길이 처리를 전담
                                         else if (QPOLL_KEYS.includes(key)) { 
                                             displayValue = simplifyQpollValue(key, value);
                                         } 
-                                        // Welcome 필드 처리 (Array, Object, String)
                                         else { 
                                             if (Array.isArray(value)) {
-                                                // 배열 (예: drinking_experience)을 문자열로 합침
                                                 displayValue = value.length > 0 ? value.join(', ') : '미응답';
                                             } else if (typeof value === 'object' && value !== null) {
-                                                // 객체 (JSONB 등)는 문자열로 변환
                                                 displayValue = String(JSON.stringify(value));
                                             } else {
-                                                // 일반 문자열 (출생연도, 성별 등)
                                                 displayValue = String(value);
                                             }
 
-                                            // Welcome 필드 최종 출력 값의 길이가 30자를 초과하면 축약
                                             if (displayValue.length > MAX_LENGTH) {
                                                 displayValue = displayValue.substring(0, MAX_LENGTH) + '...';
                                             }
@@ -293,52 +289,43 @@ const ResultsLitePage = () => {
                 </StyledTable>
             </TableCard>
             
-            {/* 페이지네이션 컴포넌트 */}
-            {totalPages > 1 && (
-                <PaginationContainer>
-                    {/* 이전 블록 */}
+            <PaginationContainer>
+                <PageButton
+                    onClick={() => setCurrentPage(prevBlockPage)}
+                    disabled={startPage === 1}
+                >
+                    {'<<'}
+                </PageButton>
+                <PageButton 
+                    disabled={currentPage === 1} 
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                >
+                    {'<'}
+                </PageButton>
+                
+                {pageNumbers.map((pageNumber) => (
                     <PageButton
-                        onClick={() => setCurrentPage(prevBlockPage)}
-                        disabled={startPage === 1}
+                        key={pageNumber}
+                        $active={currentPage === pageNumber} 
+                        onClick={() => setCurrentPage(pageNumber)}
                     >
-                        {'<<'}
+                        {pageNumber}
                     </PageButton>
-                    {/* 이전 페이지 */}
-                    <PageButton 
-                        disabled={currentPage === 1} 
-                        onClick={() => setCurrentPage(currentPage - 1)}
-                    >
-                        {'<'}
-                    </PageButton>
-                    
-                    {/* 페이지 번호 */}
-                    {pageNumbers.map((pageNumber) => (
-                        <PageButton
-                            key={pageNumber}
-                            // Styled-components에서 $active prop을 사용하는 방식으로 유지
-                            $active={currentPage === pageNumber} 
-                            onClick={() => setCurrentPage(pageNumber)}
-                        >
-                            {pageNumber}
-                        </PageButton>
-                    ))}
-                    
-                    {/* 다음 페이지 */}
-                    <PageButton 
-                        disabled={currentPage === totalPages} 
-                        onClick={() => setCurrentPage(currentPage + 1)}
-                    >
-                        {'>'}
-                    </PageButton>
-                    {/* 다음 블록 */}
-                    <PageButton
-                        onClick={() => setCurrentPage(nextBlockPage)}
-                        disabled={endPage === totalPages}
-                    >
-                        {'>>'}
-                    </PageButton>
-                </PaginationContainer>
-            )}
+                ))}
+                
+                <PageButton 
+                    disabled={currentPage === totalPages} 
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                >
+                    {'>'}
+                </PageButton>
+                <PageButton
+                    onClick={() => setCurrentPage(nextBlockPage)}
+                    disabled={endPage === totalPages}
+                >
+                    {'>>'}
+                </PageButton>
+            </PaginationContainer>
         </ResultsPageContainer>
     );
 };
