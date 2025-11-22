@@ -69,6 +69,7 @@ const ResultsLitePage = () => {
             }));
 
             try {
+                // 환경변수로 백엔드 서버주소 받아오기
                 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
                 const url = `${API_BASE_URL}/api/search`;
                 const body = { query: query };
