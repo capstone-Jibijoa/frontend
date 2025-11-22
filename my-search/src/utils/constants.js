@@ -5,7 +5,7 @@ export const KEY_TO_LABEL_MAP = {
     "region_major": "지역",
     "region_minor": "상세 지역",
     "marital_status": "결혼여부",
-    "children_count": "자녀수",
+    "children_count": "자녀 수",
     "family_size": "가족 수",
     "education_level": "최종학력",
     "job_title_raw": "직업",
