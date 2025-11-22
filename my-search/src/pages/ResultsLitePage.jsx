@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import styled from 'styled-components';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import SearchBar from '../components/SearchBar';
 import HomeButton from '../components/HomeButton';
