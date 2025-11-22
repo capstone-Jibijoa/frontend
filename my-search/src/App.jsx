@@ -7,6 +7,8 @@ import DetailPage from './pages/DetailPage';
 import { SearchResultProvider } from './contexts/SearchResultContext.jsx';
 
 function App() {
+  console.log("🔥 APP ENVIRONMENT VARIABLE CHECK 🔥");
+  console.log("VITE_API_BASE_URL:", import.meta.env.VITE_API_BASE_URL);
   return (
     <BrowserRouter>
       <SearchResultProvider>
