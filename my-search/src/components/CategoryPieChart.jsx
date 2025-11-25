@@ -2,6 +2,8 @@ import React from 'react';
 import styled from 'styled-components';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
+const MAX_ITEMS = 10;
+
 // 차트를 감싸는 박스
 const ChartBox = styled.div`
     flex: 1;
@@ -9,7 +11,7 @@ const ChartBox = styled.div`
     border-radius: 8px;
     padding: 16px;
     background-color: #ffffff;
-    min-width: 150px; 
+    min-width: 200px; 
     min-height: 400px; 
     display: flex;
     flex-direction: column;
@@ -68,6 +70,7 @@ const renderLegendText = (value) => {
 
 // 'title', 'data'을 props로 받는 컴포넌트
 const CategoryPieChart = ({ title, data }) => {
+    const chartData = data ? data.slice(0, MAX_ITEMS) : [];
     const hasData = data && data.length > 0;
 
     return (
@@ -80,7 +83,7 @@ const CategoryPieChart = ({ title, data }) => {
                 <ResponsiveContainer width="100%" height={400}> 
                 <PieChart>
                 <Pie
-                    data={data}
+                    data={chartData}
                     cx="50%"
                     cy="50%"
                     labelLine={false}
@@ -89,7 +92,7 @@ const CategoryPieChart = ({ title, data }) => {
                     fill="#8884d8"
                     dataKey="value" // 'value' 키에 있는 숫자를 기준으로 차트를 그림
                 >
-                    {data.map((entry, index) => (
+                    {chartData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                 </Pie>

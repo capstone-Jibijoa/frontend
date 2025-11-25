@@ -11,7 +11,7 @@ const SearchContainer = styled.div`
     margin-top: ${props => (props.$marginTop !== undefined ? props.$marginTop : '30px')};
     border-radius: 28px;
     border: 1px solid #D466C9;
-    background-color: #fff;
+    background-color: #ffffff;
     box-shadow: 0px 8px 24px rgba(17, 17, 26, 0.05);
     display: flex;
     align-items: center;
@@ -94,7 +94,7 @@ const getPlaceholderText = (currentModel) => {
         return "검색어를 입력하세요."; 
 };
 
-const SearchBar = ({ defaultQuery = '', defaultModel = 'lite', marginTop }) => {
+const SearchBar = ({ defaultQuery = '', defaultModel = 'lite', marginTop, onModelChange }) => {
     // 검색어를 저장할 state(초기값은 props로 받은 defaultQuery)
     const [query, setQuery] = useState(defaultQuery);
     const [model, setModel] = useState(defaultModel);
@@ -123,6 +123,10 @@ const SearchBar = ({ defaultQuery = '', defaultModel = 'lite', marginTop }) => {
     const handleModelChange = (event) => {
         const newModel = event.target.value;
         setModel(newModel);
+
+        if (onModelChange) {
+            onModelChange(newModel);
+        }
 
         if (query === "") {
             setPlaceholder(getPlaceholderText(newModel));

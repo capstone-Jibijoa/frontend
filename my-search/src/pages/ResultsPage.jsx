@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { useSearchParams, Link, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import SearchBar from '../components/SearchBar';
 import HomeButton from '../components/HomeButton';
 import CategoryPieChart from '../components/CategoryPieChart';
 import StackedBarChart from '../components/StackedBarChart';
 import LoadingIndicator from '../components/LoadingIndicator';
+import RecommendationChips from '../components/RecommendationChips'; // ✨ import 추가
 import { useSearchResults } from '../contexts/SearchResultContext';
 import { 
     KEY_TO_LABEL_MAP, 
@@ -17,7 +18,6 @@ import {
     ResultsPageContainer, 
     SummaryCard, 
     SectionTitle, 
-    ChartTitle, 
     ChartRow, 
     TableCard, 
     StyledTable, 
@@ -42,8 +42,12 @@ const ResultsPage = () => {
     const navigate = useNavigate();
     
     const query = searchParams.get('q');
-    const model = searchParams.get('model') || 'pro';
+    // 실제 데이터 로딩에 쓰이는 모델 (URL 기준)
+    const urlModel = searchParams.get('model') || 'pro';
     
+    // ✨ UI 동기화용 state (초기값은 URL 모델)
+    const [currentUiModel, setCurrentUiModel] = useState(urlModel);
+
     const { resultsState, setResultsState } = useSearchResults();
     const {
         isLoading,
@@ -55,17 +59,22 @@ const ResultsPage = () => {
     } = resultsState;
     
     const [currentPage, setCurrentPage] = useState(1);
-    const [filters, setFilters] = useState({}); // 필터 상태 추가
+    const [filters, setFilters] = useState({});
+
+    // URL이 바뀌면(뒤로가기 등) UI 모델 상태도 동기화
+    useEffect(() => {
+        setCurrentUiModel(urlModel);
+    }, [urlModel]);
     
     useEffect(() => {
-        if (query && query === lastLoadedQuery && model === resultsState.model) {
+        // 데이터 페칭 로직은 urlModel 기준
+        if (query && query === lastLoadedQuery && urlModel === resultsState.model) {
             console.log('이전 검색 결과가 유효하여 API 호출을 건너뜁니다.');
             setResultsState(prev => ({ ...prev, isLoading: false, error: null }));
             return;
         }
 
         if (!query) {
-            console.log('query 없음');
             setResultsState({
                 query: '', model: 'pro', tableData: [], chartData: [], 
                 majorFields: [], lastLoadedQuery: '', isLoading: false, error: null 
@@ -74,7 +83,7 @@ const ResultsPage = () => {
         }
         
         const fetchData = async () => {
-            console.log(`[${model} 모드] 검색 시작: ${query}`);
+            console.log(`[${urlModel} 모드] 검색 시작: ${query}`);
             console.time("API 요청 + 데이터 처리");
             
             setResultsState(prev => ({ 
@@ -82,16 +91,13 @@ const ResultsPage = () => {
                 isLoading: true, 
                 error: null,
                 query: query,
-                model: model
+                model: urlModel
             }));
 
             try {
                 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
                 const url = `${API_BASE_URL}/api/search-and-analyze`;
-                const body = { query: query, model: model };
-                
-                console.log('POST', url);
-                console.log('Body:', JSON.stringify(body));
+                const body = { query: query, model: urlModel };
                 
                 const searchResponse = await fetch(url, {
                     method: 'POST',
@@ -99,14 +105,11 @@ const ResultsPage = () => {
                     body: JSON.stringify(body)
                 });
 
-                console.log('Status:', searchResponse.status);
-
                 if (!searchResponse.ok) {
                     throw new Error(`HTTP error! status: ${searchResponse.status}`);
                 }
 
                 const data1 = await searchResponse.json();
-                console.log('응답 받음');
                 
                 const report = data1.charts || [];
                 const transformedCharts = report.map(chart_raw => {
@@ -139,11 +142,10 @@ const ResultsPage = () => {
                     lastLoadedQuery: query, 
                     isLoading: false,
                     error: null,
-                    model: model 
+                    model: urlModel 
                 }));
 
                 setCurrentPage(1);
-                console.log(`${fullTableData.length}개 결과 로드 완료`);
                 
             } catch(e) {
                 console.error('에러:', e);
@@ -160,23 +162,21 @@ const ResultsPage = () => {
         };
 
         fetchData();
-    }, [query, model, lastLoadedQuery]);
+    }, [query, urlModel, lastLoadedQuery]);
 
     const handleFilterChange = (e, key) => {
         setFilters(prev => ({ ...prev, [key]: e.target.value }));
-        setCurrentPage(1); // 필터 변경 시 1페이지로 이동
+        setCurrentPage(1);
     };
 
-    // 필터링 로직 적용
     const filteredData = tableData.filter(row => {
         return Object.keys(filters).every(key => {
             const filterValue = filters[key];
-            if (!filterValue) return true; // 해당 키에 필터 값이 없으면 통과
+            if (!filterValue) return true;
 
             const rowValue = row[key];
-            if (rowValue == null) return false; // 행에 값이 없으면 필터링(제외)
+            if (rowValue == null) return false;
 
-            // 대소문자 구분 없이 필터링
             return String(rowValue).toLowerCase().includes(filterValue.toLowerCase());
         });
     });
@@ -211,16 +211,15 @@ const ResultsPage = () => {
         navigate(`/detail/${panel_id}`);
     };
 
-    // 헤더 렌더링: HomeButton을 왼쪽으로 배치
+    // 헤더 렌더링
     const renderHeader = () => (
         <HeaderRow>
-            {/* 버튼을 먼저 둡니다 (왼쪽 배치) */}
             <HomeButton />
-            {/* SearchBar에 marginTop="0px"를 주어 정렬을 맞춥니다 */}
             <SearchBar 
                 defaultQuery={query} 
-                defaultModel={model} 
+                defaultModel={currentUiModel} // ✨ state 연결
                 marginTop="0px"
+                onModelChange={setCurrentUiModel} // ✨ 변경 시 state 업데이트
             />
         </HeaderRow>
     );
@@ -267,6 +266,10 @@ const ResultsPage = () => {
     return (
         <ResultsPageContainer>
             {renderHeader()}
+            
+            {/* ✨ 추천 검색어 칩 추가 (현재 UI 모델 전달) */}
+            <RecommendationChips currentModel={currentUiModel} />
+            
             <SummaryCard>
                 <ChartRow>
                     {chartData.map((chart, index) => {
@@ -307,7 +310,7 @@ const ResultsPage = () => {
                                     </th>
                                 ))}
                         </tr>
-                        {/* 필터 입력 행 추가 */}
+                        {/* 필터 입력 행 */}
                         <tr>
                             <th></th>
                             {orderedHeaders

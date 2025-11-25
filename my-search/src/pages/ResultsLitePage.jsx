@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useSearchParams, Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import SearchBar from '../components/SearchBar';
 import HomeButton from '../components/HomeButton';
 import LoadingIndicator from '../components/LoadingIndicator';
+import RecommendationChips from '../components/RecommendationChips';
 import { useSearchResults } from '../contexts/SearchResultContext';
 import { 
     KEY_TO_LABEL_MAP,
@@ -17,7 +18,6 @@ import {
     StyledTable, 
     TableHead, 
     TableBody, 
-    StyledLink,
     PaginationContainer,
     PageButton,
     HeaderRow    
@@ -28,8 +28,12 @@ const ResultsLitePage = () => {
     const navigate = useNavigate();
     
     const query = searchParams.get('q');
-    const model = searchParams.get('model') || 'lite';
+    // 데이터 페칭에 사용하는 모델 (URL 기준)
+    const urlModel = searchParams.get('model') || 'lite';
     
+    // ✨ UI 동기화용 state (검색창 드롭다운 <-> 추천 검색어)
+    const [currentUiModel, setCurrentUiModel] = useState(urlModel);
+
     const { resultsState, setResultsState } = useSearchResults();
     const {
         isLoading,
@@ -41,22 +45,28 @@ const ResultsLitePage = () => {
     
     const [currentPage, setCurrentPage] = useState(1);
 
+    // URL이 변경되면(예: 뒤로가기) UI 모델 상태도 동기화
     useEffect(() => {
-        if (query && query === lastLoadedQuery && model === resultsState.model) {
+        setCurrentUiModel(urlModel);
+    }, [urlModel]);
+
+    useEffect(() => {
+        // 데이터 페칭 로직은 urlModel을 기준으로 합니다.
+        if (query && query === lastLoadedQuery && urlModel === resultsState.model) {
             setResultsState(prev => ({ ...prev, isLoading: false, error: null }));
             return;
         }
         
         if (!query) {
-            console.log('query 없음');
             setResultsState({
                 query: '', model: 'lite', tableData: [], chartData: [], 
                 majorFields: [], lastLoadedQuery: '', isLoading: false, error: null 
             });
             return;
         }
+
         const fetchData = async () => {
-            console.log('Lite 모드 검색 시작');
+            console.log(`Lite 모드 검색 시작 (Model: ${urlModel})`);
             console.time("Lite 모드 검색");
             
             setResultsState(prev => ({ 
@@ -64,20 +74,13 @@ const ResultsLitePage = () => {
                 isLoading: true, 
                 error: null,
                 query: query,
-                model: model
+                model: urlModel
             }));
 
             try {
-                // 환경변수로 백엔드 서버주소 받아오기
-                console.log('🔍 ENV:', import.meta.env);
-                console.log('🔍 VITE_API_BASE_URL:', import.meta.env.VITE_API_BASE_URL);
-                console.log('🔍 MODE:', import.meta.env.MODE);
                 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
-                console.log('📍 Using:', API_BASE_URL);
                 const url = `${API_BASE_URL}/api/search`;
-                const body = { query: query };
-                
-                console.log('POST', url);
+                const body = { query: query }; // Lite 모드는 보통 쿼리만 보냄 (필요시 model 추가)
                 
                 const searchResponse = await fetch(url, {
                     method: 'POST',
@@ -85,20 +88,13 @@ const ResultsLitePage = () => {
                     body: JSON.stringify(body)
                 });
 
-                console.log('Status:', searchResponse.status);
-
                 if (!searchResponse.ok) {
                     throw new Error(`HTTP error! status: ${searchResponse.status}`);
                 }
 
                 const data = await searchResponse.json();
-                console.log('응답 받음');
                 
-                const fields = (data.display_fields || []).map(item => {
-                    return item.field || item;
-                });
-                console.log('추출된 필드:', fields);
-                
+                const fields = (data.display_fields || []).map(item => item.field || item);
                 const fullTableData = data.tableData || [];
 
                 setResultsState(prev => ({
@@ -109,12 +105,11 @@ const ResultsLitePage = () => {
                     lastLoadedQuery: query,
                     isLoading: false,
                     error: null,
-                    model: model
+                    model: urlModel
                 }));
                 
                 setCurrentPage(1);
 
-                console.log(`${fullTableData.length}개 결과 로드 완료`);
             } catch(e) {
                 console.error('Lite 모드 오류:', e);
                 setResultsState(prev => ({ 
@@ -129,8 +124,9 @@ const ResultsLitePage = () => {
         };
 
         fetchData();
-    }, [query, model, lastLoadedQuery, resultsState.model, setResultsState]);
+    }, [query, urlModel, lastLoadedQuery, resultsState.model, setResultsState]);
 
+    // 페이지네이션 로직
     const itemsPerPage = 10;
     const totalPages = Math.ceil(tableData.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -140,7 +136,6 @@ const ResultsLitePage = () => {
     const otherKeys = allKeys.filter(key => 
         key !== 'panel_id' && !majorFields.includes(key)
     );
-    // 주요 필드 -> 기타 필드 순으로 정렬 (중복 제거)
     const orderedHeaders = [...new Set([...majorFields, ...otherKeys])];
     
     const pagesPerBlock = 10; 
@@ -148,7 +143,6 @@ const ResultsLitePage = () => {
     const startPage = (currentBlock - 1) * pagesPerBlock + 1;
     const endPage = Math.min(startPage + pagesPerBlock - 1, totalPages);
 
-    // 화면에 보여줄 페이지 번호 배열
     const pageNumbers = [];
     if (totalPages > 0) {
         for (let i = startPage; i <= endPage; i++) {
@@ -169,8 +163,9 @@ const ResultsLitePage = () => {
             <HomeButton />
             <SearchBar 
                 defaultQuery={query} 
-                defaultModel={model} 
-                marginTop="0px" // SearchBar 자체 여백 제거
+                defaultModel={currentUiModel} // ✨ state 연결
+                marginTop="0px" 
+                onModelChange={setCurrentUiModel} // ✨ 변경 시 state 업데이트
             />
         </HeaderRow>
     );
@@ -188,18 +183,8 @@ const ResultsLitePage = () => {
         return (
             <ResultsPageContainer>
                 {renderHeader()}
-                <SectionTitle
-                    style={{
-                        marginTop: '60px',
-                        textAlign: 'center',
-                        color: '#6b7280'
-                    }}
-                >
+                <SectionTitle style={{ marginTop: '60px', textAlign: 'center', color: '#6b7280' }}>
                     '{query}'에 대한 검색 결과가 없습니다.
-                    <br/><br/>
-                    <span style={{ fontSize: '14px', color: '#999' }}>
-                        (백엔드 응답은 받았지만 tableData가 비어있습니다. F12 콘솔을 확인하세요.)
-                    </span>
                 </SectionTitle>
             </ResultsPageContainer>
         );
@@ -220,6 +205,9 @@ const ResultsLitePage = () => {
         <ResultsPageContainer>
             {renderHeader()}
             
+            {/* ✨ RecommendationChips에 현재 UI 모델 전달 */}
+            <RecommendationChips currentModel={currentUiModel} />
+            
             <SectionTitle style={{ marginTop: '50px', fontSize: '20px', color: '#6b7280' }}>
                 총 {tableData.length}개의 검색 결과
             </SectionTitle>
@@ -231,7 +219,6 @@ const ResultsLitePage = () => {
                         <tr>
                             <th>목록번호</th>
                             {orderedHeaders
-                                // panel_id는 제외하고 최대 4개 필드만 표시
                                 .filter(key => key !== 'panel_id')
                                 .slice(0, 4)
                                 .map((key) => (
@@ -248,18 +235,14 @@ const ResultsLitePage = () => {
                                 onClick={() => handleRowClick(row.panel_id)}
                                 style={{ cursor: 'pointer' }}
                             >
-                                <td>
-                                    {/* Link를 제거하고 목록 번호만 표시합니다. 행 전체가 클릭 가능합니다. */}
-                                    {startIndex + index + 1}
-                                </td>
-
+                                <td>{startIndex + index + 1}</td>
                                 {orderedHeaders
                                     .filter(key => key !== 'panel_id')
                                     .slice(0, 4)
                                     .map((key) => {
                                         const value = row[key];
                                         let displayValue;
-                                        const MAX_LENGTH = 30; // 축약 기준 길이
+                                        const MAX_LENGTH = 30;
                                         
                                         if (value == null || value === '' || value === '미응답') {
                                             displayValue = '미응답';
@@ -282,9 +265,7 @@ const ResultsLitePage = () => {
                                         }
 
                                         return (
-                                            <td key={key}>
-                                                {displayValue}
-                                            </td>
+                                            <td key={key}>{displayValue}</td>
                                         );
                                     })}
                             </tr>
