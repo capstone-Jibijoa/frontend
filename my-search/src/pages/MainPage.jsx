@@ -17,7 +17,7 @@ const MainPage = () => {
                 For Insight
             </Headline>
             <SearchBar 
-                marginTop="95px"
+                marginTop="85px"
                 defaultModel={currentModel}
                 onModelChange={setCurrentModel} 
             />

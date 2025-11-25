@@ -24,7 +24,7 @@ export const SummaryCard = styled.section`
     background-color: #ffffff;
     border-radius: 16px;
     padding: 32px;
-    margin-top: 30px;
+    margin-top: 0px;
     margin-bottom: 0px;
     border: 1px solid #D466C9; 
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
@@ -62,7 +62,7 @@ export const TableCard = styled.section`
     background-color: #ffffff;
     border-radius: 16px;
     padding: 32px;
-    margin-top: 30px; 
+    margin-top: 32px; 
     border: 1px solid #D466C9; 
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
     width: 100%;

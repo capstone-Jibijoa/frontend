@@ -22,9 +22,9 @@ import {
 // 스타일 임포트
 import { 
     ResultsPageContainer, 
-    SummaryCard as ChartContainer, 
+    SummaryCard, 
     SectionTitle, 
-    ChartRow, 
+    ChartRow,
     TableCard, 
     StyledTable, 
     TableHead, 
@@ -36,31 +36,66 @@ import {
 } from '../style/ResultPage.styles';
 
 const TextSummaryCard = styled.div`
-    background-color: #f0f9ff; /* 연한 하늘색 배경 */
-    border: 1px solid #bae6fd;
-    border-radius: 12px;
-    padding: 24px;
-    margin-bottom: 24px;
-    color: #0369a1; /* 진한 파란색 텍스트 */
-    font-size: 1.1rem;
-    line-height: 1.6;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    white-space: pre-line; /* 줄바꿈 문자(\n) 적용 */
+    width: 100%;
+    background-color: #ffffff;
+    border: 1px solid #D466C9;
+    border-radius: 20px;
+
+    display: flex;
+    flex-direction: column;
+    padding: 32px;
+
+    margin-top: 16px; 
+    margin-bottom: 16px;
+    
+    height: auto;
+    
+    transition: all 0.3s ease;
+`;
+
+const SummaryHeader = styled.div`
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    width: 100%;
+
+    &:hover {
+        opacity: 0.8;
+    }
 
     h3 {
-        margin: 0 0 12px 0;
+        margin: 0;
         font-size: 1.25rem;
         font-weight: 700;
+        color: #D466C9;
         display: flex;
         align-items: center;
-        gap: 8px;
-        color: #0284c7;
-        
-        &::before {
-            content: '📊';
-            font-size: 1.4rem;
-        }
     }
+`;
+
+const ToggleIcon = styled.div`
+    font-size: 1.5rem;
+    color: #D466C9;
+
+    transform: ${props => props.$isOpen ? 'rotate(180deg)' : 'rotate(0deg)'};
+    transition: transform 0.1s ease;
+    margin-left: 12px;
+`;
+
+const SummaryContent = styled.div`
+    color: #011119ff;
+    font-size: 1.1rem;
+    line-height: 1.6;
+    white-space: pre-line;
+    width: 100%;
+    
+    max-height: ${props => props.$isOpen ? '1000px' : '0'};
+    opacity: ${props => props.$isOpen ? '1' : '0'};
+    overflow: hidden;
+    margin-top: ${props => props.$isOpen ? '16px' : '0'};
+    transition: all 0.4s ease-in-out;
 `;
 
 // 차트 데이터 변환 헬퍼 함수
@@ -82,6 +117,7 @@ const ResultsPage = () => {
     
     // UI 상태 동기화
     const [currentUiModel, setCurrentUiModel] = useState(urlModel);
+    const [isSummaryOpen, setIsSummaryOpen] = useState(false);
 
     // 전역 검색 결과 상태 (Context)
     const { resultsState, setResultsState } = useSearchResults();
@@ -321,14 +357,21 @@ const ResultsPage = () => {
             {/* ✨ [신규] AI 요약 카드 (데이터가 있을 때만 표시) */}
             {searchSummary && (
                 <TextSummaryCard>
-                    <h3>AI 인사이트 요약</h3>
-                    {searchSummary}
+                    <SummaryHeader onClick={() => setIsSummaryOpen(!isSummaryOpen)}>
+                        <h3>AI 인사이트 요약</h3>
+                        <ToggleIcon $isOpen={isSummaryOpen}>
+                            ▼
+                        </ToggleIcon>
+                    </SummaryHeader>
+                    <SummaryContent $isOpen={isSummaryOpen}>
+                        {searchSummary}
+                    </SummaryContent>
                 </TextSummaryCard>
             )}
             
             {/* 차트 영역 */}
             {chartData.length > 0 && (
-                <ChartContainer>
+                <SummaryCard>
                     <ChartRow>
                         {chartData.map((chart, index) => {
                             if (chart.chart_type === 'crosstab') {
@@ -350,7 +393,7 @@ const ResultsPage = () => {
                             }
                         })}
                     </ChartRow>
-                </ChartContainer>
+                </SummaryCard>
             )}
             
             {/* 테이블 영역 */}
