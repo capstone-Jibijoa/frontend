@@ -47,33 +47,33 @@ const Chip = styled.button`
 `;
 
 const RECOMMENDED_KEYWORDS = [
-    "20대 트렌드",
-    "주말 여가",
-    "재택 만족도",
-    "선호 운동",
-    "1인 식단"
+    { label: "20대 남성 차량", query: "20대 남성이 많이 타는 차" },
+    { label: "OTT 이용자", query: "서울, 경기 OTT 이용하는 젊은 층 30명" },
+    { label: "전문직", query: "소득 높은 유망 전문직 종류와 연봉 비교" },
+    { label: "새벽 배송", query: "새벽 배송을 자주 이용하는 30대 주부" },
+    { label: "30대 주부", query: "30대 주부의 취미생활" }
 ];
 
 const RecommendationChips = ({ currentModel = 'lite' }) => {
     const navigate = useNavigate();
 
-    const handleChipClick = (keyword) => {
+    const handleChipClick = (query) => {
         if (currentModel === 'lite') {
-            navigate(`/results-lite?q=${encodeURIComponent(keyword)}&model=lite`);
+            navigate(`/results-lite?q=${encodeURIComponent(query)}&model=lite`);
         } else {
-            navigate(`/results?q=${encodeURIComponent(keyword)}&model=pro`);
+            navigate(`/results?q=${encodeURIComponent(query)}&model=pro`);
         }
     };
 
     return (
         <Container>
-            {RECOMMENDED_KEYWORDS.map((keyword, index) => (
+            {RECOMMENDED_KEYWORDS.map((item, index) => (
                 <Chip 
                     key={index} 
-                    onClick={() => handleChipClick(keyword)}
-                    title={keyword}
+                    onClick={() => handleChipClick(item.query)}
+                    title={item.label}
                 >
-                    {keyword}
+                    {item.label}
                 </Chip>
             ))}
         </Container>
