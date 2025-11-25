@@ -28,12 +28,9 @@ const ResultsLitePage = () => {
     const navigate = useNavigate();
     
     const query = searchParams.get('q');
-    // 데이터 페칭에 사용하는 모델 (URL 기준)
     const urlModel = searchParams.get('model') || 'lite';
-    
-    // ✨ UI 동기화용 state (검색창 드롭다운 <-> 추천 검색어)
-    const [currentUiModel, setCurrentUiModel] = useState(urlModel);
 
+    const [currentUiModel, setCurrentUiModel] = useState(urlModel);
     const { resultsState, setResultsState } = useSearchResults();
     const {
         isLoading,
@@ -45,13 +42,11 @@ const ResultsLitePage = () => {
     
     const [currentPage, setCurrentPage] = useState(1);
 
-    // URL이 변경되면(예: 뒤로가기) UI 모델 상태도 동기화
     useEffect(() => {
         setCurrentUiModel(urlModel);
     }, [urlModel]);
 
     useEffect(() => {
-        // 데이터 페칭 로직은 urlModel을 기준으로 합니다.
         if (query && query === lastLoadedQuery && urlModel === resultsState.model) {
             setResultsState(prev => ({ ...prev, isLoading: false, error: null }));
             return;
@@ -80,7 +75,7 @@ const ResultsLitePage = () => {
             try {
                 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
                 const url = `${API_BASE_URL}/api/search`;
-                const body = { query: query }; // Lite 모드는 보통 쿼리만 보냄 (필요시 model 추가)
+                const body = { query: query }; 
                 
                 const searchResponse = await fetch(url, {
                     method: 'POST',
@@ -163,9 +158,9 @@ const ResultsLitePage = () => {
             <HomeButton />
             <SearchBar 
                 defaultQuery={query} 
-                defaultModel={currentUiModel} // ✨ state 연결
+                defaultModel={currentUiModel} 
                 marginTop="0px" 
-                onModelChange={setCurrentUiModel} // ✨ 변경 시 state 업데이트
+                onModelChange={setCurrentUiModel} 
             />
         </HeaderRow>
     );
@@ -204,8 +199,6 @@ const ResultsLitePage = () => {
     return (
         <ResultsPageContainer>
             {renderHeader()}
-            
-            {/* ✨ RecommendationChips에 현재 UI 모델 전달 */}
             <RecommendationChips currentModel={currentUiModel} />
             
             <SectionTitle style={{ marginTop: '50px', fontSize: '20px', color: '#6b7280' }}>
