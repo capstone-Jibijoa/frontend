@@ -73,7 +73,11 @@ const StackedBarChart = ({ title, data }) => {
                         ticks={[0, 50, 100]}
                         interval={0}
                     />
-                    <YAxis dataKey="name" type="category" />
+                    <YAxis 
+                        dataKey="name" 
+                        type="category" 
+                        tick={{ fontSize: 10, fill: '#374151' }}
+                    />
                     <Tooltip formatter={(value) => `${value}%`} />
                     <Legend />
 

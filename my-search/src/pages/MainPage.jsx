@@ -1,11 +1,14 @@
-import React from 'react';
+import React, {useState} from 'react';
 import styled from 'styled-components';
 import SearchBar from '../components/SearchBar';
 import Footer from '../components/Footer';
 import { PageWrapper, Headline } from '../style/MainPage.styles';
+import RecommendationChips from '../components/RecommendationChips';
 
 
 const MainPage = () => {
+    const [currentModel, setCurrentModel] = useState('lite');
+
     return (
         <PageWrapper>
             <Headline>
@@ -13,7 +16,12 @@ const MainPage = () => {
                 <br />
                 For Insight
             </Headline>
-            <SearchBar marginTop="95px" />
+            <SearchBar 
+                marginTop="85px"
+                defaultModel={currentModel}
+                onModelChange={setCurrentModel} 
+            />
+            <RecommendationChips currentModel={currentModel} />
             <Footer />
         </PageWrapper>
     );

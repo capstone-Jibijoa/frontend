@@ -1,11 +1,16 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { useSearchParams, Link, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+
+// 컴포넌트 임포트
 import SearchBar from '../components/SearchBar';
 import HomeButton from '../components/HomeButton';
 import CategoryPieChart from '../components/CategoryPieChart';
 import StackedBarChart from '../components/StackedBarChart';
 import LoadingIndicator from '../components/LoadingIndicator';
+import RecommendationChips from '../components/RecommendationChips';
+
+// Context & Utils
 import { useSearchResults } from '../contexts/SearchResultContext';
 import { 
     KEY_TO_LABEL_MAP, 
@@ -13,12 +18,13 @@ import {
     QPOLL_KEYS, 
     simplifyQpollValue 
 } from '../utils/constants';
+
+// 스타일 임포트
 import { 
     ResultsPageContainer, 
     SummaryCard, 
     SectionTitle, 
-    ChartTitle, 
-    ChartRow, 
+    ChartRow,
     TableCard, 
     StyledTable, 
     TableHead, 
@@ -29,6 +35,70 @@ import {
     HeaderRow
 } from '../style/ResultPage.styles';
 
+const TextSummaryCard = styled.div`
+    width: 100%;
+    background-color: #ffffff;
+    border: 1px solid #D466C9;
+    border-radius: 20px;
+
+    display: flex;
+    flex-direction: column;
+    padding: 32px;
+
+    margin-top: 16px; 
+    margin-bottom: 16px;
+    
+    height: auto;
+    
+    transition: all 0.3s ease;
+`;
+
+const SummaryHeader = styled.div`
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    width: 100%;
+
+    &:hover {
+        opacity: 0.8;
+    }
+
+    h3 {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #D466C9;
+        display: flex;
+        align-items: center;
+    }
+`;
+
+const ToggleIcon = styled.div`
+    font-size: 1.5rem;
+    color: #D466C9;
+
+    transform: ${props => props.$isOpen ? 'rotate(180deg)' : 'rotate(0deg)'};
+    transition: transform 0.1s ease;
+    margin-left: 12px;
+`;
+
+const SummaryContent = styled.div`
+    color: #011119ff;
+    font-size: 1.1rem;
+    line-height: 1.6;
+    white-space: pre-line;
+    width: 100%;
+    
+    max-height: ${props => props.$isOpen ? '1000px' : '0'};
+    opacity: ${props => props.$isOpen ? '1' : '0'};
+    overflow: hidden;
+    margin-top: ${props => props.$isOpen ? '16px' : '0'};
+    transition: all 0.4s ease-in-out;
+`;
+
+// 차트 데이터 변환 헬퍼 함수
 const transformChartData = (chartValuesObject) => {
     if (!chartValuesObject) return [];
     return Object.entries(chartValuesObject).map(([name, value]) => ({
@@ -41,9 +111,15 @@ const ResultsPage = () => {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     
+    // URL 파라미터 파싱
     const query = searchParams.get('q');
-    const model = searchParams.get('model') || 'pro';
+    const urlModel = searchParams.get('model') || 'pro';
     
+    // UI 상태 동기화
+    const [currentUiModel, setCurrentUiModel] = useState(urlModel);
+    const [isSummaryOpen, setIsSummaryOpen] = useState(false);
+
+    // 전역 검색 결과 상태 (Context)
     const { resultsState, setResultsState } = useSearchResults();
     const {
         isLoading,
@@ -51,30 +127,38 @@ const ResultsPage = () => {
         chartData,
         tableData,
         majorFields,
-        lastLoadedQuery
+        lastLoadedQuery,
+        searchSummary 
     } = resultsState;
     
     const [currentPage, setCurrentPage] = useState(1);
-    const [filters, setFilters] = useState({}); // 필터 상태 추가
-    
+    const [filters, setFilters] = useState({});
+
+    // URL 모델 변경 시 UI 모델 동기화
     useEffect(() => {
-        if (query && query === lastLoadedQuery && model === resultsState.model) {
+        setCurrentUiModel(urlModel);
+    }, [urlModel]);
+    
+    // 데이터 로딩 로직
+    useEffect(() => {
+        // 이미 로드된 데이터와 쿼리/모델이 같으면 재요청 방지
+        if (query && query === lastLoadedQuery && urlModel === resultsState.model) {
             console.log('이전 검색 결과가 유효하여 API 호출을 건너뜁니다.');
             setResultsState(prev => ({ ...prev, isLoading: false, error: null }));
             return;
         }
 
         if (!query) {
-            console.log('query 없음');
             setResultsState({
                 query: '', model: 'pro', tableData: [], chartData: [], 
-                majorFields: [], lastLoadedQuery: '', isLoading: false, error: null 
+                majorFields: [], lastLoadedQuery: '', isLoading: false, error: null,
+                searchSummary: null
             });
             return;
         }
         
         const fetchData = async () => {
-            console.log(`[${model} 모드] 검색 시작: ${query}`);
+            console.log(`[${urlModel} 모드] 검색 시작: ${query}`);
             console.time("API 요청 + 데이터 처리");
             
             setResultsState(prev => ({ 
@@ -82,16 +166,14 @@ const ResultsPage = () => {
                 isLoading: true, 
                 error: null,
                 query: query,
-                model: model
+                model: urlModel,
+                searchSummary: null // 로딩 시작 시 요약 초기화
             }));
 
             try {
                 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
                 const url = `${API_BASE_URL}/api/search-and-analyze`;
-                const body = { query: query, model: model };
-                
-                console.log('POST', url);
-                console.log('Body:', JSON.stringify(body));
+                const body = { query: query, model: urlModel };
                 
                 const searchResponse = await fetch(url, {
                     method: 'POST',
@@ -99,15 +181,13 @@ const ResultsPage = () => {
                     body: JSON.stringify(body)
                 });
 
-                console.log('Status:', searchResponse.status);
-
                 if (!searchResponse.ok) {
                     throw new Error(`HTTP error! status: ${searchResponse.status}`);
                 }
 
                 const data1 = await searchResponse.json();
-                console.log('응답 받음');
                 
+                // 차트 데이터 변환
                 const report = data1.charts || [];
                 const transformedCharts = report.map(chart_raw => {
                     const chartType = chart_raw?.chart_type;
@@ -130,7 +210,9 @@ const ResultsPage = () => {
 
                 const fields = (data1.display_fields || []).map(item => item.field);
                 const fullTableData = data1.tableData || [];
+                const summaryText = data1.search_summary || null;
                 
+                // 상태 업데이트
                 setResultsState(prev => ({
                     ...prev,
                     chartData: transformedCharts, 
@@ -139,11 +221,11 @@ const ResultsPage = () => {
                     lastLoadedQuery: query, 
                     isLoading: false,
                     error: null,
-                    model: model 
+                    model: urlModel,
+                    searchSummary: summaryText // ✨ 요약문 상태 저장
                 }));
 
                 setCurrentPage(1);
-                console.log(`${fullTableData.length}개 결과 로드 완료`);
                 
             } catch(e) {
                 console.error('에러:', e);
@@ -152,7 +234,8 @@ const ResultsPage = () => {
                     error: e.message, 
                     isLoading: false, 
                     tableData: [], 
-                    chartData: [] 
+                    chartData: [],
+                    searchSummary: null
                 }));
             } finally {
                 console.timeEnd("API 요청 + 데이터 처리");
@@ -160,40 +243,41 @@ const ResultsPage = () => {
         };
 
         fetchData();
-    }, [query, model, lastLoadedQuery]);
+    }, [query, urlModel, lastLoadedQuery, resultsState.model, setResultsState]);
 
+    // 필터 핸들러
     const handleFilterChange = (e, key) => {
         setFilters(prev => ({ ...prev, [key]: e.target.value }));
-        setCurrentPage(1); // 필터 변경 시 1페이지로 이동
+        setCurrentPage(1);
     };
 
-    // 필터링 로직 적용
+    // 필터링 로직
     const filteredData = tableData.filter(row => {
         return Object.keys(filters).every(key => {
             const filterValue = filters[key];
-            if (!filterValue) return true; // 해당 키에 필터 값이 없으면 통과
-
+            if (!filterValue) return true;
             const rowValue = row[key];
-            if (rowValue == null) return false; // 행에 값이 없으면 필터링(제외)
-
-            // 대소문자 구분 없이 필터링
+            if (rowValue == null) return false;
             return String(rowValue).toLowerCase().includes(filterValue.toLowerCase());
         });
     });
 
+    // 페이지네이션 로직
     const itemsPerPage = 10;
     const totalPages = Math.ceil(filteredData.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
     const currentTableData = filteredData.slice(startIndex, startIndex + itemsPerPage);
     
+    // 테이블 헤더 구성
     const allKeys = tableData.length > 0 ? Object.keys(tableData[0]) : [];
     const otherKeys = allKeys.filter(key => 
         key !== 'panel_id' && !majorFields.includes(key)
     );
     const orderedHeaders = [...new Set([...majorFields, ...otherKeys])];
+    
+    // 페이지 블록 계산
     const pagesPerBlock = 10; 
     const currentBlock = Math.ceil(currentPage / pagesPerBlock); 
-
     const startPage = (currentBlock - 1) * pagesPerBlock + 1;
     const endPage = Math.min(startPage + pagesPerBlock - 1, totalPages);
 
@@ -211,31 +295,30 @@ const ResultsPage = () => {
         navigate(`/detail/${panel_id}`);
     };
 
-    // 헤더 렌더링: HomeButton을 왼쪽으로 배치
+    // 헤더 렌더링
     const renderHeader = () => (
         <HeaderRow>
-            {/* 버튼을 먼저 둡니다 (왼쪽 배치) */}
             <HomeButton />
-            {/* SearchBar에 marginTop="0px"를 주어 정렬을 맞춥니다 */}
             <SearchBar 
                 defaultQuery={query} 
-                defaultModel={model} 
+                defaultModel={currentUiModel} 
                 marginTop="0px"
+                onModelChange={setCurrentUiModel} 
             />
         </HeaderRow>
     );
 
+    // 로딩 상태
     if (isLoading) {
         return (
             <ResultsPageContainer>
                 {renderHeader()}
-                <LoadingIndicator
-                    message="인사이트를 도출하고 있습니다. 잠시만 기다려 주세요."
-                />
+                <LoadingIndicator message="데이터를 분석하고 인사이트를 도출 중입니다..." />
             </ResultsPageContainer>
         );
     }
 
+    // 데이터 없음 상태
     if (tableData.length === 0 && !error) {
         return (
             <ResultsPageContainer>
@@ -253,6 +336,7 @@ const ResultsPage = () => {
         );
     }
 
+    // 에러 상태
     if (error) {
         return (
             <ResultsPageContainer>
@@ -267,34 +351,54 @@ const ResultsPage = () => {
     return (
         <ResultsPageContainer>
             {renderHeader()}
-            <SummaryCard>
-                <ChartRow>
-                    {chartData.map((chart, index) => {
-                        const chartValues = chart.data;
-
-                        if (chart.chart_type === 'crosstab') {
-                            return (
-                                <StackedBarChart
-                                    key={index}
-                                    title={chart.title}
-                                    data={chart.data}
-                                />
-                            );
-                        } else {
-                            return (
-                                <CategoryPieChart
-                                    key={index}
-                                    title={chart.title}
-                                    data={chart.data}
-                                />
-                            );
-                        }
-                    })}
-                </ChartRow>
-            </SummaryCard>
             
+            <RecommendationChips currentModel={currentUiModel} />
+            
+            {/* ✨ [신규] AI 요약 카드 (데이터가 있을 때만 표시) */}
+            {searchSummary && (
+                <TextSummaryCard>
+                    <SummaryHeader onClick={() => setIsSummaryOpen(!isSummaryOpen)}>
+                        <h3>AI 인사이트 요약</h3>
+                        <ToggleIcon $isOpen={isSummaryOpen}>
+                            ▼
+                        </ToggleIcon>
+                    </SummaryHeader>
+                    <SummaryContent $isOpen={isSummaryOpen}>
+                        {searchSummary}
+                    </SummaryContent>
+                </TextSummaryCard>
+            )}
+            
+            {/* 차트 영역 */}
+            {chartData.length > 0 && (
+                <SummaryCard>
+                    <ChartRow>
+                        {chartData.map((chart, index) => {
+                            if (chart.chart_type === 'crosstab') {
+                                return (
+                                    <StackedBarChart
+                                        key={index}
+                                        title={chart.title}
+                                        data={chart.data}
+                                    />
+                                );
+                            } else {
+                                return (
+                                    <CategoryPieChart
+                                        key={index}
+                                        title={chart.title}
+                                        data={chart.data}
+                                    />
+                                );
+                            }
+                        })}
+                    </ChartRow>
+                </SummaryCard>
+            )}
+            
+            {/* 테이블 영역 */}
             <TableCard>
-                <SectionTitle>Table</SectionTitle>
+                <SectionTitle>상세 데이터 Table</SectionTitle>
                 <StyledTable>
                     <TableHead>
                         <tr>
@@ -307,7 +411,7 @@ const ResultsPage = () => {
                                     </th>
                                 ))}
                         </tr>
-                        {/* 필터 입력 행 추가 */}
+                        {/* 필터 입력 행 */}
                         <tr>
                             <th></th>
                             {orderedHeaders
@@ -319,7 +423,8 @@ const ResultsPage = () => {
                                             placeholder="필터..."
                                             value={filters[key] || ''}
                                             onChange={(e) => handleFilterChange(e, key)}
-                                            style={{ width: '100%', boxSizing: 'border-box' }}/>
+                                            style={{ width: '100%', boxSizing: 'border-box', padding: '4px', borderRadius: '4px', border: '1px solid #ddd' }}
+                                        />
                                     </th>
                                 ))}
                         </tr>
@@ -342,15 +447,16 @@ const ResultsPage = () => {
                                         const value = row[key];
                                         let displayValue;
                                         const MAX_LENGTH = 30; 
+                                        
                                         if (value == null || value === '' || value === '미응답') {
-                                            displayValue = '미응답';
+                                            displayValue = '-';
                                         } 
                                         else if (QPOLL_KEYS.includes(key)) { 
                                             displayValue = simplifyQpollValue(key, value);
                                         } 
                                         else { 
                                             if (Array.isArray(value)) {
-                                                displayValue = value.length > 0 ? value.join(', ') : '미응답';
+                                                displayValue = value.length > 0 ? value.join(', ') : '-';
                                             } else if (typeof value === 'object') {
                                                 displayValue = String(JSON.stringify(value));
                                             } else {
@@ -363,7 +469,7 @@ const ResultsPage = () => {
                                         }
 
                                         return (
-                                            <td key={key}>
+                                            <td key={key} title={String(value)}>
                                                 {displayValue}
                                             </td>
                                         );
@@ -374,6 +480,7 @@ const ResultsPage = () => {
                 </StyledTable>
             </TableCard>
             
+            {/* 페이지네이션 */}
             <PaginationContainer>
                 <PageButton
                     onClick={() => setCurrentPage(prevBlockPage)}
@@ -387,6 +494,7 @@ const ResultsPage = () => {
                 >
                     {'<'}
                 </PageButton>
+                
                 {pageNumbers.map((pageNumber) => (
                     <PageButton
                         key={pageNumber}
@@ -396,6 +504,7 @@ const ResultsPage = () => {
                         {pageNumber}
                     </PageButton>
                 ))}
+                
                 <PageButton 
                     disabled={currentPage === totalPages} 
                     onClick={() => setCurrentPage(currentPage + 1)}
