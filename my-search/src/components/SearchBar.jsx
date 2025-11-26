@@ -98,10 +98,9 @@ const SearchBar = ({ defaultQuery = '', defaultModel = 'lite', marginTop, onMode
     // 검색어를 저장할 state(초기값은 props로 받은 defaultQuery)
     const [query, setQuery] = useState(defaultQuery);
     const [model, setModel] = useState(defaultModel);
+
     // placeholder을 관리한 state
     const [placeholder, setPlaceholder] = useState(getPlaceholderText(defaultModel));
-    // 모델 선택을 위한 state
-    
     const navigate = useNavigate();
     
     // 검색 모드가 바뀔 때

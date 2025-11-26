@@ -92,7 +92,7 @@ export const simplifyQpollValue = (key, value) => {
         const match = value.match(/(\d+[^ ]+)/); 
         
         if (value.includes('~')) {
-             return value.replace(' 이상', '').replace(' 미만', '').replace(' ', '');
+            return value.replace(' 이상', '').replace(' 미만', '').replace(' ', '');
         } else if (match) {
             return match[1].trim();
         }
