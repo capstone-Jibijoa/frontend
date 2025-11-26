@@ -45,7 +45,10 @@ const DetailPage = () => {
             setError(null);
 
             try {
-                const response = await fetch(`http://localhost:8000/api/panels/${panel_id}`); 
+                const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+                console.log('📍 Using:', API_BASE_URL);
+                const url = `${API_BASE_URL}/api/search`;
+                const response = await fetch(`${url}/api/panels/${panel_id}`); 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
