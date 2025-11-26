@@ -9,11 +9,6 @@ export const ResultsPageContainer = styled.div`
     padding: 0px 80px 20px 80px;
     box-sizing: border-box;
     background-color: #fbfbfbff;
-    /* 
-    background: linear-gradient( 
-        #f1f3f7ff  0%,
-        #e3ddddff 30%
-    ); */ 
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -52,8 +47,8 @@ export const ChartTitle = styled.h2`
 
 export const ChartRow = styled.div`
     display: flex;
-    gap: 24px; /* 차트 사이의 간격 */
-    flex-wrap: wrap; /*차트가 여러 개일 때 자동으로 줄바꿈 */
+    gap: 24px;
+    flex-wrap: wrap;
     justify-content: center;
 `;
 
@@ -70,18 +65,18 @@ export const TableCard = styled.section`
 
 export const StyledTable = styled.table`
     width: 100%;
-    border-collapse: collapse; /* 테두리 선을 한 줄로 합침 */
-    text-align: left; /* 기본 정렬은 왼쪽 */
+    border-collapse: collapse;
+    text-align: left;
 `;
 
 // 테이블 헤드
 export const TableHead = styled.thead`
-    background-color: #f9fafb; /* 헤더 배경색 */
+    background-color: #f9fafb;
     
     th {
         font-size: 14px;
         font-weight: 600;
-        color: #6b7280; /* 연한 회색 글씨 */
+        color: #6b7280;
         padding: 12px 16px;
         border-bottom: 2px solid #e5e7eb;
         text-align: center;
@@ -94,7 +89,6 @@ export const TableHead = styled.thead`
 // 테이블 바디
 export const TableBody = styled.tbody`
     tr {
-        /* 한 줄씩 번갈아가며 배경색을 칠합니다 (zebra striping) */
         &:nth-child(even) {
         background-color: #f9fafb;
         }
@@ -102,7 +96,7 @@ export const TableBody = styled.tbody`
 
     td {
         font-size: 14px;
-        color: #374151; /* 진한 회색 글씨 */
+        color: #374151;
         padding: 12px 16px;
         border-bottom: 1px solid #e5e7eb;
         text-align: center;
@@ -113,12 +107,12 @@ export const TableBody = styled.tbody`
 `;
 
 export const StyledLink = styled(Link)`
-    color: #374151; /* 테이블 텍스트와 동일한 색상 */
-    text-decoration: none; /* 밑줄 제거 */
+    color: #374151;
+    text-decoration: none;
 
     :hover {
-    text-decoration: underline; /* 마우스 올리면 밑줄 표시 */
-    color: #D466C9; /* 포인트 컬러 */
+    text-decoration: underline;
+    color: #D466C9;
     }
 `;
 
@@ -144,12 +138,10 @@ export const PageButton = styled.button`
     cursor: pointer;
     transition: background-color 0.2s;
 
-    /* 마우스를 올렸을 때 효과 */
     &:hover {
         background-color: #f9fafb;
     }
 
-    /* 'active' prop이 true일 때 적용될 스타일 */
     ${(props) =>
         props.$active &&
         `
@@ -159,7 +151,6 @@ export const PageButton = styled.button`
         font-weight: 700;
     `}
 
-    /* 비활성화되었을 때 */
     &:disabled {
         color: #9ca3af;
         cursor: not-allowed;
@@ -174,4 +165,71 @@ export const HeaderRow = styled.div`
     gap: 15px;
     width: 100%;
     margin-top: 30px;
+`;
+
+// 요약 카드
+export const TextSummaryCard = styled.div`
+    width: 100%;
+    background-color: #ffffff;
+    border: 1px solid #D466C9;
+    border-radius: 20px;
+
+    display: flex;
+    flex-direction: column;
+    padding: 32px;
+
+    margin-top: 16px; 
+    margin-bottom: 16px;
+    
+    height: auto;
+    
+    transition: all 0.3s ease;
+`;
+
+// 요약 제목
+export const SummaryHeader = styled.div`
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    width: 100%;
+
+    &:hover {
+        opacity: 0.8;
+    }
+
+    h3 {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #D466C9;
+        display: flex;
+        align-items: center;
+    }
+`;
+
+// 토글 아이콘
+export const ToggleIcon = styled.div`
+    font-size: 1.5rem;
+    color: #D466C9;
+
+    transform: ${props => props.$isOpen ? 'rotate(180deg)' : 'rotate(0deg)'};
+    transition: transform 0.1s ease;
+    margin-left: 12px;
+`;
+
+// 요약 내용
+export const SummaryContent = styled.div`
+    color: #011119ff;
+    font-size: 1.1rem;
+    line-height: 1.6;
+    white-space: pre-line;
+    width: 100%;
+    
+    max-height: ${props => props.$isOpen ? '1000px' : '0'};
+    opacity: ${props => props.$isOpen ? '1' : '0'};
+    overflow: hidden;
+    margin-top: ${props => props.$isOpen ? '16px' : '0'};
+    transition: all 0.4s ease-in-out;
 `;

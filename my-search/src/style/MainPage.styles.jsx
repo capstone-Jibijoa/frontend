@@ -25,16 +25,15 @@ export const PageWrapper = styled.div`
     background: 
         linear-gradient(
             0deg, 
-            rgba(255, 215, 0, 0.6) 0%, /* 골드 옐로우 */
+            rgba(255, 215, 0, 0.6) 0%,
             transparent 30%,
-            rgba(255, 215, 0, 0.6) 100%  /* 살구색(Apricot) */
+            rgba(255, 215, 0, 0.6) 100%
         ),
-        /* 그 아래에 깔릴 베이스 그라데이션 */
         linear-gradient(
             -70deg, 
-            rgba(207, 87, 195, 1) 0%,  /* 핑크 (75%) */
-            rgba(250, 205, 211, 1) 50%, /* 핑크/살구 (75%) */
-            rgba(120, 10, 238, 1) 100% /* 진한 보라 (75%) */
+            rgba(207, 87, 195, 1) 0%,  
+            rgba(250, 205, 211, 1) 50%, 
+            rgba(120, 10, 238, 1) 100% 
 
         ); 
 
@@ -42,7 +41,6 @@ export const PageWrapper = styled.div`
     background-size: 400% 400%;
     animation: ${moveGradient} 10s ease infinite;
 
-  /* 내부 콘텐츠들을 정렬 */
     display: flex;
     flex-direction: column;
     align-items: center;
