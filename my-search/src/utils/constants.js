@@ -71,7 +71,7 @@ export const QPOLL_FIELD_LABEL_MAP = {
     "favorite_summer_water_spot": "여름 물놀이 선호 장소"
 };
 
-// **Q-Poll 필드 키 목록 (값 가공 식별용)**
+// Q-Poll 필드 키 목록 (값 가공 식별용)
 export const QPOLL_KEYS = Object.keys(QPOLL_FIELD_LABEL_MAP);
 
 /**
