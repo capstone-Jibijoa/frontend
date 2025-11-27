@@ -14,7 +14,6 @@ const Container = styled.div`
     justify-content: center;
 `;
 
-// 2. 개별 버튼 (Chip): 꽉 채우기 & 둥근 모서리
 const Chip = styled.button`
     width: 100%;          
     background-color: #ffffff;
@@ -28,7 +27,6 @@ const Chip = styled.button`
     cursor: pointer;
     transition: all 0.2s ease;
     
-    /* 말 줄임 처리 */
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -47,11 +45,11 @@ const Chip = styled.button`
 `;
 
 const RECOMMENDED_KEYWORDS = [
-    { label: "20대 남성 차량", query: "20대 남성이 많이 타는 차" },
-    { label: "OTT 이용자", query: "서울, 경기 OTT 이용하는 젊은 층 30명" },
-    { label: "전문직", query: "소득 높은 유망 전문직 종류와 연봉 비교" },
+    { label: "20대 여성 여행", query: "20대 여성들이 선호하는 해외 여행 목적지와 여행 유형은?" },
+    { label: "명절 선물", query: "수도권 사람들이 선호하는 명절 선물" },
+    { label: "미혼 남성", query: "미혼 남성이 스트레스 받는 상황" },
     { label: "새벽 배송", query: "새벽 배송을 자주 이용하는 30대 주부" },
-    { label: "30대 주부", query: "30대 주부의 취미생활" }
+    { label: "전문직", query: "소득 높은 유망 전문직 종류와 연봉 비교" }
 ];
 
 const RecommendationChips = ({ currentModel = 'lite' }) => {
